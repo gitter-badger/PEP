@@ -14,7 +14,8 @@ import subprocess
 
 
 # cache hash
-_cache_dir_path = "/var/data/scrapersCache"
+# _cache_dir_path = "/var/data/scrapersCache"
+_cache_dir_path = "./var/data/scrapersCache"
 _cache_cleanup_done = False
 _output_lock = threading.RLock()
 
