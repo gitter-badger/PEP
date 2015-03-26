@@ -1,3 +1,4 @@
+import hashlib
 import re
 from urllib import quote
 
@@ -10,6 +11,7 @@ import helpers
 _site_ulr = 'http://www.thedanishparliament.dk'
 _base_url = '{}/Members/Members_in_party_groups.aspx'.format(_site_ulr)
 PAGINATION = '&pageSize=100&pageNr=1'
+SAFE_QUOTE = ':/?&='
 
 
 def _create_entity():
@@ -18,7 +20,7 @@ def _create_entity():
             "id": "",
             "entity_type": ""
         },
-        "person_name": "",
+        "name": "",
         "fields": []
     }
 
@@ -43,14 +45,14 @@ def _get_people(party_obj):
     people_obj = []
     for party in party_obj:
         modified_url = party['party_url'] + PAGINATION
-        modified_url = quote(modified_url, safe=':/?&=')
+        modified_url = quote(modified_url, safe=SAFE_QUOTE)
 
         page_object = BeautifulSoup(helpers.fetch_string(modified_url, cache_hours=6))
 
         table_party = page_object.find('table', {'class': 'telbogTable'}).find_all('tr')[1:]
         for person in table_party:
-            person_ulr = _site_ulr + person['onclick'].replace('document.location=(\'', '').replace('\')', '')
-            person_id = person_ulr.split('/')[-1].strip('.aspx')
+            person_url = _site_ulr + person['onclick'].replace('document.location=(\'', '').replace('\')', '')
+            person_id = person_url.split('/')[-1].strip('.aspx')
             all_td = person.find_all('td')
             person_name = ' '.join([_.text for _ in all_td[:2]])
             position = all_td[3].text
@@ -62,18 +64,27 @@ def _get_people(party_obj):
                 profile_pic = None
 
             people_entity = _create_entity()
-            people_entity['_meta']['id'] = person_id
+
             people_entity['_meta']['entity_type'] = 'person'
-            people_entity['person_name'] = person_name
+            people_entity['name'] = person_name
+            conc_names = person_name + position + person_id
+            people_entity['_meta']['id'] = hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
 
             fields = [{'tag': 'political_party', 'value': party['party_name']},
-                      {'tag': 'url', 'value': person_ulr},
+                      {'tag': 'url', 'value': person_url},
                       {'tag': 'position', 'value': position},
-                      {'tag': 'phone_number', 'value': phone.strip('View biography')}]
+                      {'tag': 'phone_number', 'value': phone.strip('View biography')},
+                      {'tag': 'country', 'value': 'Denmark'},
+                      {'tag': 'person_name', 'value': person_name}]
             if profile_pic:
-                fields.append({'tag': 'picture_url', 'value': profile_pic})
+                fields.append(
+                    {
+                        'tag': 'picture_url',
+                        'value': profile_pic.replace('~/media/', 'Members/~/media/').replace('84', '133').replace('x84', 'x133')
+                    }
+                )
 
-            open_person_url = BeautifulSoup(helpers.fetch_string(quote(person_ulr, safe=':/?&='), cache_hours=6))
+            open_person_url = BeautifulSoup(helpers.fetch_string(quote(person_url, safe=SAFE_QUOTE), cache_hours=6))
 
             bio = open_person_url.find('div', {'class': 'tabContent clearfix'})
             first_block = bio.find('p').text
@@ -110,8 +121,11 @@ def _get_people(party_obj):
 
 def main():
     for entity in _get_people(_get_parties(_base_url)):
+        # helpers.check(entity)
         helpers.emit(entity)
 
 # main scraper
 if __name__ == "__main__":
     main()
+
+    # http://www.thedanishparliament.dk/Members/~/media/CV/Foto/20111/EL/Per_Clausen/Per_Clausenx84.jpg.ashx
