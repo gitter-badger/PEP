@@ -127,5 +127,3 @@ def main():
 # main scraper
 if __name__ == "__main__":
     main()
-
-    # http://www.thedanishparliament.dk/Members/~/media/CV/Foto/20111/EL/Per_Clausen/Per_Clausenx84.jpg.ashx
