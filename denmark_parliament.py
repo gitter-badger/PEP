@@ -5,9 +5,6 @@ from bs4 import BeautifulSoup
 
 import helpers
 
-
-# doc = BeautifulSoup(helpers.fetch_string(_base_url.format(page), cache_hours=6))
-
 _site_ulr = 'http://www.thedanishparliament.dk'
 _base_url = '{}/Members/Members_in_party_groups.aspx'.format(_site_ulr)
 PAGINATION = '&pageSize=100&pageNr=1'
