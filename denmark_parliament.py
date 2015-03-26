@@ -2,8 +2,10 @@ import re
 from urllib import quote
 
 from bs4 import BeautifulSoup
+from dateutil import parser
 
 import helpers
+
 
 _site_ulr = 'http://www.thedanishparliament.dk'
 _base_url = '{}/Members/Members_in_party_groups.aspx'.format(_site_ulr)
@@ -83,15 +85,23 @@ def _get_people(party_obj):
             except AttributeError:
                 born_string = regexp_born.search(first_block).group(0).split(',')[0].split('.')[0].strip('born ')
 
-            if 'in' in born_string or ' at ' in born_string:
+            if 'in' in born_string or ' at ' in born_string or ' on ' in born_string:
                 try:
                     date, place = born_string.split(' in ')
                 except ValueError:
-                    date, place = born_string.split(' at ')
-                fields.append({'tag': 'date_of_birth', 'value': date})
+                    try:
+                        date, place = born_string.split(' at ')
+                    except ValueError:
+                        date, place = born_string.split(' on ')
+
+                fields.append({'tag': 'date_of_birth', 'value': str(parser.parse(date)).split(' ')[0]})
                 fields.append({'tag': 'place_of_birth', 'value': place})
             else:
-                fields.append({'tag': 'date_of_birth', 'value': born_string})
+                try:
+                    fields.append({'tag': 'date_of_birth', 'value': str(parser.parse(born_string)).split(' ')[0]})
+                except ValueError:
+                    fields.append(
+                        {'tag': 'date_of_birth', 'value': str(parser.parse(born_string.split('.')[0])).split(' ')[0]})
 
             people_entity['fields'] = fields
             people_obj.append(people_entity)
