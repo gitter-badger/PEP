@@ -2,9 +2,12 @@ import itertools
 import helpers
 import re
 from bs4 import BeautifulSoup
-import urlparse
+
+from urllib import quote
 import urllib2
 from pprint import pprint
+
+# doc = BeautifulSoup(helpers.fetch_string(_base_url.format(page), cache_hours=6))
 
 _site_ulr = 'http://www.thedanishparliament.dk'
 _base_url = '{}/Members/Members_in_party_groups.aspx'.format(_site_ulr)
@@ -26,7 +29,8 @@ def _get_parties(url):
     party_objects = []
     _party_entities = []
 
-    main_page = BeautifulSoup(urllib2.urlopen(url))
+    # main_page = BeautifulSoup(urllib2.urlopen(url))
+    main_page = BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
 
     table_party = main_page.find('table', {'class': 'telbogTable'}).find_all('tr')[1:-1]
 
@@ -60,7 +64,9 @@ def _get_people(party_obj):
     people_obj = []
     for party in party_obj:
         modified_url = party['party_url']+PAGINATION
-        page_object = BeautifulSoup(urllib2.urlopen(modified_url))
+        modified_url = quote(modified_url, safe=':/?&=')
+        # page_object = BeautifulSoup(urllib2.urlopen(modified_url))
+        page_object = BeautifulSoup(helpers.fetch_string(modified_url, cache_hours=6))
 
         table_party = page_object.find('table', {'class': 'telbogTable'}).find_all('tr')[1:]
         for person in table_party:
@@ -70,7 +76,11 @@ def _get_people(party_obj):
             person_name = ' '.join([_.text for _ in all_td[:2]])
             position = all_td[3].text
             phone = all_td[4].text.split(':')[-1].strip()
-            profile_pic = _site_ulr+'/'+all_td[-1].find('img')['src']
+
+            try:
+                profile_pic = _site_ulr+'/'+all_td[-1].find('img')['src']
+            except TypeError:
+                profile_pic = None
 
             people_entity = _create_entity()
             people_entity['_meta']['id'] = person_id
@@ -79,11 +89,13 @@ def _get_people(party_obj):
 
             fields = [{'tag': 'political_party', 'value': party['party_name']},
                       {'tag': 'url', 'value': person_ulr},
-                      {'tag': 'picture_url', 'value': profile_pic},
                       {'tag': 'position', 'value': position},
-                      {'tag': 'phone_number', 'value': phone}]
+                      {'tag': 'phone_number', 'value': phone.strip('View biography')}]
+            if profile_pic:
+                fields.append({'tag': 'picture_url', 'value': profile_pic})
 
-            open_person_url = BeautifulSoup(urllib2.urlopen(person_ulr))
+            open_person_url = BeautifulSoup(helpers.fetch_string(quote(person_ulr, safe=':/?&='), cache_hours=6))
+            # open_person_url = BeautifulSoup(urllib2.urlopen(person_ulr))
             bio = open_person_url.find('div', {'class': 'tabContent clearfix'})
             first_block = bio.find('p').text
             regexp_born_in_place = re.compile('born (.+),')
@@ -94,8 +106,11 @@ def _get_people(party_obj):
             except AttributeError:
                 born_string = regexp_born.search(first_block).group(0).split(',')[0].split('.')[0].strip('born ')
 
-            if 'in' in born_string:
-                date, place = born_string.split('in')
+            if 'in' in born_string or ' at ' in born_string:
+                try:
+                    date, place = born_string.split(' in ')
+                except ValueError:
+                    date, place = born_string.split(' at ')
                 fields.append({'tag': 'date_of_birth', 'value': date})
                 fields.append({'tag': 'place_of_birth', 'value': place})
             else:
@@ -106,4 +121,15 @@ def _get_people(party_obj):
             people_obj.append(people_entity)
     return people_obj
 
-pprint(_get_people(parties_info))
+# pprint(_get_people(parties_info))
+
+
+def main():
+    for entity in _get_people(parties_info):
+        helpers.emit(entity)
+    for _entity in party_entities:
+        helpers.emit(_entity)
+
+# main scraper
+if __name__ == "__main__":
+    main()
