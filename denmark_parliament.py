@@ -27,7 +27,6 @@ def _create_entity():
 def _get_parties(url):
     party_objects = []
 
-    # main_page = BeautifulSoup(urllib2.urlopen(url))
     main_page = BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
 
     table_party = main_page.find('table', {'class': 'telbogTable'}).find_all('tr')[1:-1]
@@ -46,7 +45,7 @@ def _get_people(party_obj):
     for party in party_obj:
         modified_url = party['party_url'] + PAGINATION
         modified_url = quote(modified_url, safe=':/?&=')
-        # page_object = BeautifulSoup(urllib2.urlopen(modified_url))
+
         page_object = BeautifulSoup(helpers.fetch_string(modified_url, cache_hours=6))
 
         table_party = page_object.find('table', {'class': 'telbogTable'}).find_all('tr')[1:]
@@ -76,7 +75,7 @@ def _get_people(party_obj):
                 fields.append({'tag': 'picture_url', 'value': profile_pic})
 
             open_person_url = BeautifulSoup(helpers.fetch_string(quote(person_ulr, safe=':/?&='), cache_hours=6))
-            # open_person_url = BeautifulSoup(urllib2.urlopen(person_ulr))
+
             bio = open_person_url.find('div', {'class': 'tabContent clearfix'})
             first_block = bio.find('p').text
             regexp_born_in_place = re.compile('born (.+),')
