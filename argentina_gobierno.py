@@ -1,6 +1,6 @@
 import hashlib
 import re
-
+from urllib2 import urlopen
 from bs4 import BeautifulSoup
 
 import helpers
@@ -37,28 +37,35 @@ def _create_id(args):
 def _get_tables(url):
     objects = {'objects': []}
     main_page = BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
+    # main_page = BeautifulSoup(urlopen(url))
     tables = main_page.find_all('table')
 
     for table in tables:
         table_object = {'instance': []}
         rows = table.find_all('tr')
         for row in rows:
-            print row
-            political_position = row.find('th', {'colspan': '2'}) or row.find('td', {'class': 'pintado'})
-            person = row.find_all('td')
-            person_obj_len = len(person)
+            tds = row.find_all('td')
+            len_tds = len(tds)
 
-            if political_position:
-                table_object['instance'].append({CUSTOM_TAG: _bs_to_utf(political_position)})
-            elif person_obj_len is 2:
-                if len(table_object['instance']) and CUSTOM_TAG in table_object['instance'][-1]:
-                    table_object['instance'][-1].update(
-                        {POSITION: _bs_to_utf(person[0]), 'person_name': _bs_to_utf(person[1])})
+            if len_tds:
+                if len_tds > 1:
+                    p_name = _bs_to_utf(tds[1])
+                    if '.' in p_name:
+                        p_name = p_name.split('.')[1].strip()
+                    person_info = {POSITION: _bs_to_utf(tds[0]), 'person_name': p_name}
+                    if tds[0].find('a'):
+                        person_info.update({'person_url': _site_ulr + tds[0].find('a')['href']})
+                        if CUSTOM_TAG in table_object['instance'][-1]:
+                            table_object['instance'][-1]['people'].append(person_info)
+                else:
+                    sub_institute = {CUSTOM_TAG: _bs_to_utf(tds[0]), 'people': []}
+                    table_object['instance'].append(sub_institute)
+            else:
+                main_institute = {CUSTOM_TAG: _bs_to_utf(row), 'people': []}
+                table_object['instance'].append(main_institute)
 
         objects['objects'].append(table_object)
-        break
-    from pprint import pprint
-    pprint(objects)
+
     return objects
 
 
@@ -68,14 +75,26 @@ def _get_entities(table_obj):
     for table in table_obj['objects']:
         for _entity in table['instance']:
             entity_type = 'person'
+            inst = _entity[CUSTOM_TAG]
+            q_people = len(_entity['people'])
+            if q_people:
+                for pers in _entity['people']:
 
-            if _entity['person_name']:
-                _id = _create_id(
-                    [_entity[CUSTOM_TAG], _entity[POSITION], _entity['person_name']])
-                fields = [{'tag': CUSTOM_TAG, 'value': _entity[CUSTOM_TAG]},
-                          {'tag': POSITION, 'value': _entity[POSITION]},
-                          {'tag': 'person_name', 'value': _entity['person_name']}]
-                entities.append(_create_entity(_id, entity_type, _entity['person_name'], fields))
+                    if POSITION in pers and 'person_name' in pers:
+
+                        _id = _create_id([inst, pers[POSITION], pers['person_name']])
+
+                        fields = [{'tag': CUSTOM_TAG, 'value': inst},
+                                  {'tag': POSITION, 'value': pers[POSITION]},
+                                  {'tag': 'person_url', 'value': pers['person_url']},
+                                  {'tag': 'person_name', 'value': pers['person_name']}]
+                        entities.append(_create_entity(_id, entity_type, pers['person_name'], fields))
+                    else:
+                        raise Exception('problem with {}'.format(pers))
+            else:
+                _id = _create_id([_entity[CUSTOM_TAG]])
+                entities.append(_create_entity(_id, 'organisation', _entity[CUSTOM_TAG],
+                                               [{'tag': CUSTOM_TAG, 'value': _entity[CUSTOM_TAG]}]))
 
     return entities
 
