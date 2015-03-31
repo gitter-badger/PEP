@@ -13,6 +13,7 @@ SAFE_QUOTE = ':/?&='
 CUSTOM_TAG = 'political_institute'
 POSITION = 'political_position'
 
+
 def _create_entity(_id, entity_type, obj_name, fields):
     return {
         "_meta": {
@@ -42,28 +43,23 @@ def _get_tables(url):
         table_object = {'instance': []}
         rows = table.find_all('tr')
         for row in rows:
-
+            print row
             political_position = row.find('th', {'colspan': '2'}) or row.find('td', {'class': 'pintado'})
             person = row.find_all('td')
             person_obj_len = len(person)
 
-
-
             if political_position:
                 table_object['instance'].append({CUSTOM_TAG: _bs_to_utf(political_position)})
             elif person_obj_len is 2:
-
                 if len(table_object['instance']) and CUSTOM_TAG in table_object['instance'][-1]:
                     table_object['instance'][-1].update(
                         {POSITION: _bs_to_utf(person[0]), 'person_name': _bs_to_utf(person[1])})
 
         objects['objects'].append(table_object)
+        break
     from pprint import pprint
     pprint(objects)
     return objects
-
-
-# def _get_
 
 
 def _get_entities(table_obj):
