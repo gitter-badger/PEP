@@ -1,6 +1,6 @@
 import hashlib
 import re
-from urllib2 import urlopen
+
 from bs4 import BeautifulSoup
 
 import helpers
@@ -8,7 +8,6 @@ import helpers
 
 _site_ulr = 'http://www.lapampa.gov.ar'
 _base_url = '{}/autoridades-xmap.html'.format(_site_ulr)
-SAFE_QUOTE = ':/?&='
 
 CUSTOM_TAG = 'political_institute'
 POSITION = 'political_position'
