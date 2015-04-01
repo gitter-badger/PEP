@@ -50,7 +50,7 @@ def _create_id(args):
     """
     if not isinstance(args, list):
         args = [args]
-    conc_names = ''.join(args)
+    conc_names = ''.join([_.decode('utf-8') for _ in args])
     return hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
 
 
@@ -73,7 +73,7 @@ def get_tables(url):
             if len_tds:
                 if len_tds > 1:
                     p_name = _bs_to_utf(tds[1])
-                    p_name = re.sub("^\s+", "", p_name.split(".")[-1])
+                    p_name = re.sub("^\s+", "", p_name.split(".")[-1].strip())
                     person_info = {POSITION: _bs_to_utf(tds[0]), 'person_name': p_name}
                     if tds[0].find('a'):
                         person_info.update({'person_url': _site_ulr + tds[0].find('a')['href']})
@@ -101,8 +101,6 @@ def get_entities(table_obj):
                 for pers in _entity['people']:
 
                     if POSITION in pers and 'person_name' in pers:
-                        print pers['person_name']
-
                         _id = _create_id([inst, pers[POSITION], pers['person_name']])
 
                         fields = [{'tag': CUSTOM_TAG, 'value': inst},

@@ -25,6 +25,18 @@ def _create_entity():
     }
 
 
+def _create_id(args):
+    """
+    Generate ID for entity
+    :param args: strings
+    :return: hashsum
+    """
+    if not isinstance(args, list):
+        args = [args]
+    conc_names = ''.join(args)
+    return hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
+
+
 def _get_parties(url):
     party_objects = []
 
@@ -68,7 +80,7 @@ def _get_people(party_obj):
             people_entity['_meta']['entity_type'] = 'person'
             people_entity['name'] = person_name
             conc_names = person_name + position + person_id
-            people_entity['_meta']['id'] = hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
+            people_entity['_meta']['id'] = _create_id(conc_names)
 
             fields = [{'tag': 'political_party', 'value': party['party_name']},
                       {'tag': 'url', 'value': person_url},
