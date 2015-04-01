@@ -14,6 +14,15 @@ POSITION = 'political_position'
 
 
 def _create_entity(_id, entity_type, obj_name, fields):
+    """
+    easy create entity using input data
+
+    :param _id: unique id of entity
+    :param entity_type: organisation | person etc
+    :param obj_name: formal name
+    :param fields: list with {tags and values}
+    :return: dict
+    """
     return {
         "_meta": {
             "id": _id,
@@ -25,19 +34,34 @@ def _create_entity(_id, entity_type, obj_name, fields):
 
 
 def _bs_to_utf(bs):
+    """
+    Convert bs4 object to encoded value
+    :param bs: bs object
+    :return: unicode
+    """
     return bs.text.strip().encode('utf-8')
 
 
 def _create_id(args):
+    """
+    Generate ID for entity
+    :param args: strings
+    :return: hashsum
+    """
+    if not isinstance(args, list):
+        args = [args]
     conc_names = ''.join(args)
     return hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
 
 
-def _get_tables(url):
+def get_tables(url):
     objects = {'objects': []}
     main_page = BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
     # main_page = BeautifulSoup(urlopen(url))
     tables = main_page.find_all('table')
+
+    def __fill_helper(_tag):
+        table_object['instance'].append({CUSTOM_TAG: _bs_to_utf(_tag), 'people': []})
 
     for table in tables:
         table_object = {'instance': []}
@@ -57,18 +81,16 @@ def _get_tables(url):
                         if CUSTOM_TAG in table_object['instance'][-1]:
                             table_object['instance'][-1]['people'].append(person_info)
                 else:
-                    sub_institute = {CUSTOM_TAG: _bs_to_utf(tds[0]), 'people': []}
-                    table_object['instance'].append(sub_institute)
+                    __fill_helper(tds[0])
             else:
-                main_institute = {CUSTOM_TAG: _bs_to_utf(row), 'people': []}
-                table_object['instance'].append(main_institute)
+                __fill_helper(row)
 
         objects['objects'].append(table_object)
 
     return objects
 
 
-def _get_entities(table_obj):
+def get_entities(table_obj):
     entities = []
 
     for table in table_obj['objects']:
@@ -99,9 +121,9 @@ def _get_entities(table_obj):
 
 
 def main():
-    x = _get_tables(_base_url)
+    main_obj = get_tables(_base_url)
 
-    for entity in _get_entities(x):
+    for entity in get_entities(main_obj):
         helpers.check(entity)
         # helpers.emit(entity)
 
