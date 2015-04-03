@@ -11,6 +11,10 @@ _main_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete.jsp'
 _second_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete_ampliado.jsp'
 _tel_index = re.compile('\([0-9]{3,4}\)')
 
+POL_POS = 'political_position'
+PER_NAME = 'person_name'
+DEP = 'department'
+
 def _create_entity(_id, entity_type, obj_name, fields):
     """
     easy create entity using input data
@@ -56,34 +60,80 @@ def get_rows(urls):
     print urls
     objects = []
     from pprint import pprint
-    main_page = BeautifulSoup(helpers.fetch_string(urls[0], cache_hours=6))
-    other_page = BeautifulSoup(helpers.fetch_string(urls[1], cache_hours=6))
+    # main_page = BeautifulSoup(helpers.fetch_string(urls[0], cache_hours=6))
+    # other_page = BeautifulSoup(helpers.fetch_string(urls[1], cache_hours=6))
     from urllib2 import urlopen
 
-    # main_page = BeautifulSoup(urlopen(urls[0]))
+    main_page = BeautifulSoup(urlopen(urls[0]))
 
     other_page = BeautifulSoup(urlopen(urls[1]))
 
     main_rows = main_page.find_all('table', {'cellpadding': "0", 'cellspacing': "1", 'width': "100%"})[1:]
     # pprint([_.text.strip() for _ in main_rows])
 
+    obje = []
 
-    for row in main_rows:
-        print '='*10
-        trs = row.find_all('tr')
-        for tr in trs:
-            tr_to_text = _bs_to_utf(tr)
+    def _rec(_rows):
+        for _r in _rows:
+            sub_r = _r.find_all('tr')
+            if sub_r:
+                _rec(sub_r)
+            else:
+                tr_to_text = _bs_to_utf(_r)
+                not_mail = '@' not in tr_to_text
+                _phone = re.search(_tel_index, tr_to_text)
+                if not _phone and not_mail:
+                    if tr_to_text not in obje:
+                        obje.append(tr_to_text)
+        return obje
 
-            if not '@' in tr_to_text or not 'Teléfono' in tr_to_text or not 'Teleféno' in tr_to_text:
-                print tr_to_text
+    o = _rec(main_rows)
+    # pprint(o)
+    pprint(len(o))
+
+    z = []
+    for i in o:
+        if i.isupper():
+            z.append({POL_POS: i})
+        else:
+            z[-1].update({PER_NAME: i})
+    # from json import dumps
+    # print(dumps(z))
+
+    second_table = other_page.find_all('table', {'width': '98%', 'border': '0', 'align': 'center'})[-1]
+    second_table_rows = second_table.find_all('tr')
+    p = []
+
+    for st_row in second_table_rows:
+        # print st_row
+        person_container = st_row.find('span', {'class': 'linktextoResaltado'})
+        header = st_row.find('td', {'class': 'subtitulos'})
+        prob_name = st_row.find('span', {'class': 'textoResaltado11'})
 
 
+        if header:
+            _header = _bs_to_utf(header)
+            if 'Centro de Infraestructura y Desarrollo para las Comunidades' != _header:
+                # print _header
+                p.append({DEP: _header, 'vars': []})
+                # print '='*15
+        elif person_container:
+            pol_position = _bs_to_utf(person_container)
+            if 'rollo para las Com' not in pol_position:
+                # print pol_position
+                person = {POL_POS: pol_position}
+                if prob_name:
+                    # print _bs_to_utf(prob_name)
+                    alt_name = _bs_to_utf(prob_name)
+                    person.update({PER_NAME: alt_name})
 
-        # political_position, person_name = row[:2]
-        # obj = {'political_position': _bs_to_utf(political_position),
-        #        'picture_url': _bs_to_utf(person_name)}
-        # objects.append(obj)
+                if DEP in p[-1]:
+                    p[-1]['vars'].append(person)
 
+
+                # print '-=-'*10
+
+    pprint(p)
     print objects
     return objects
 
