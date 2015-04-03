@@ -5,10 +5,8 @@ from bs4 import BeautifulSoup
 
 import helpers
 
-
-_site_ulr = 'http://www.bajacalifornia.gob.mx'
-_root = '/portal/gobierno/'
-_base_urls = [_.format(_site_ulr, _root) for _ in ['{0}{1}gabinete.jsp', '{0}{1}gabinete_ampliado.jsp']]
+_main_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete.jsp'
+_second_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete_ampliado.jsp'
 
 
 def _create_entity(_id, entity_type, obj_name, fields):
@@ -37,7 +35,7 @@ def _bs_to_utf(bs):
     :param bs: bs object
     :return: unicode
     """
-    return bs.text.strip().encode('utf-8')
+    return bs.text.strip()
 
 
 def _create_id(args):
@@ -53,29 +51,31 @@ def _create_id(args):
 
 
 def get_rows(urls):
+    print urls
     objects = []
-    # main_page = BeautifulSoup(helpers.fetch_string(urls[0], cache_hours=6))
-    # other_page = BeautifulSoup(helpers.fetch_string(url[1], cache_hours=6))
+    from pprint import pprint
+    main_page = BeautifulSoup(helpers.fetch_string(urls[0], cache_hours=6))
+    other_page = BeautifulSoup(helpers.fetch_string(urls[1], cache_hours=6))
     from urllib2 import urlopen
 
     main_page = BeautifulSoup(urlopen(urls[0]))
 
     other_page = BeautifulSoup(urlopen(urls[1]))
 
-    main_rows = main_page.find_all('table', {'cellpadding': "0", 'cellspacing': "1", 'width': "100%"})
+    main_rows = main_page.find_all('table', {'cellpadding': "0", 'cellspacing': "1", 'width': "100%"})[1:]
+    # pprint([_.text.strip() for _ in main_rows])
 
 
-    z = []
     for row in main_rows:
-        if row.find('td', {'class': 'resaltadoAzulTxt'}):
-            z.append(row)
+        print '='*10
+        print row.find_all('tr')[:2]
 
 
         # political_position, person_name = row[:2]
         # obj = {'political_position': _bs_to_utf(political_position),
         #        'picture_url': _bs_to_utf(person_name)}
         # objects.append(obj)
-    print len(z)
+
     print objects
     return objects
 
@@ -92,7 +92,7 @@ def get_entities(persons):
 
 
 def main():
-    main_obj = get_rows(_base_urls)
+    main_obj = get_rows([_main_url, _second_url])
 
     for entity in get_entities(main_obj):
         # helpers.check(entity)
