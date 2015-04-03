@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import hashlib
 import re
 
@@ -7,7 +9,7 @@ import helpers
 
 _main_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete.jsp'
 _second_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete_ampliado.jsp'
-
+_tel_index = re.compile('\([0-9]{3,4}\)')
 
 def _create_entity(_id, entity_type, obj_name, fields):
     """
@@ -58,7 +60,7 @@ def get_rows(urls):
     other_page = BeautifulSoup(helpers.fetch_string(urls[1], cache_hours=6))
     from urllib2 import urlopen
 
-    main_page = BeautifulSoup(urlopen(urls[0]))
+    # main_page = BeautifulSoup(urlopen(urls[0]))
 
     other_page = BeautifulSoup(urlopen(urls[1]))
 
@@ -68,7 +70,13 @@ def get_rows(urls):
 
     for row in main_rows:
         print '='*10
-        print row.find_all('tr')[:2]
+        trs = row.find_all('tr')
+        for tr in trs:
+            tr_to_text = _bs_to_utf(tr)
+
+            if not '@' in tr_to_text or not 'Teléfono' in tr_to_text or not 'Teleféno' in tr_to_text:
+                print tr_to_text
+
 
 
         # political_position, person_name = row[:2]
