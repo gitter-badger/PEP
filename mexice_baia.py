@@ -15,6 +15,7 @@ POL_POS = 'political_position'
 PER_NAME = 'person_name'
 DEP = 'department'
 
+
 def _create_entity(_id, entity_type, obj_name, fields):
     """
     easy create entity using input data
@@ -57,19 +58,13 @@ def _create_id(args):
 
 
 def get_rows(urls):
-    print urls
-    objects = []
-    from pprint import pprint
     # main_page = BeautifulSoup(helpers.fetch_string(urls[0], cache_hours=6))
     # other_page = BeautifulSoup(helpers.fetch_string(urls[1], cache_hours=6))
     from urllib2 import urlopen
-
     main_page = BeautifulSoup(urlopen(urls[0]))
-
     other_page = BeautifulSoup(urlopen(urls[1]))
 
     main_rows = main_page.find_all('table', {'cellpadding': "0", 'cellspacing': "1", 'width': "100%"})[1:]
-    # pprint([_.text.strip() for _ in main_rows])
 
     obje = []
 
@@ -87,65 +82,81 @@ def get_rows(urls):
                         obje.append(tr_to_text)
         return obje
 
-    o = _rec(main_rows)
-    # pprint(o)
-    pprint(len(o))
-
-    z = []
-    for i in o:
+    objects = []
+    for i in _rec(main_rows):
         if i.isupper():
-            z.append({POL_POS: i})
+            objects.append({POL_POS: i})
         else:
-            z[-1].update({PER_NAME: i})
-    # from json import dumps
-    # print(dumps(z))
+            objects[-1].update({PER_NAME: i})
 
     second_table = other_page.find_all('table', {'width': '98%', 'border': '0', 'align': 'center'})[-1]
     second_table_rows = second_table.find_all('tr')
     p = []
 
     for st_row in second_table_rows:
-        # print st_row
-        person_container = st_row.find('span', {'class': 'linktextoResaltado'})
+        person_container = st_row.find('span', {'class': 'linktextoResaltado'}) or st_row.find('p', {'class': 'linktextoResaltado'})
         header = st_row.find('td', {'class': 'subtitulos'})
         prob_name = st_row.find('span', {'class': 'textoResaltado11'})
+        email_tag = st_row.find('span', {'class': 'linkrutagris'})
+        if email_tag:
+            email_tag.clear()
 
+        if person_container and person_container.find('span', {'class': 'textoResaltado11'}):
+            person_container.find('span', {'class': 'textoResaltado11'}).extract()
 
         if header:
             _header = _bs_to_utf(header)
             if 'Centro de Infraestructura y Desarrollo para las Comunidades' != _header:
-                # print _header
-                p.append({DEP: _header, 'vars': []})
-                # print '='*15
-        elif person_container:
-            pol_position = _bs_to_utf(person_container)
-            if 'rollo para las Com' not in pol_position:
-                # print pol_position
-                person = {POL_POS: pol_position}
-                if prob_name:
-                    # print _bs_to_utf(prob_name)
-                    alt_name = _bs_to_utf(prob_name)
-                    person.update({PER_NAME: alt_name})
+                if _header:
+                    p.append({DEP: _header, 'vars': []})
 
+        elif person_container:
+            pol_position = ' '.join([_.strip() for _ in _bs_to_utf(person_container).split('\n')])
+            if 'rollo para las Com' not in pol_position:
+                person = {POL_POS: pol_position}
+
+                if prob_name:
+                    mail_obj = prob_name.find('a')
+                    x = prob_name.find('span')
+                    if mail_obj and x:
+                        mail_obj.clear()
+                    alt_name = _bs_to_utf(prob_name)
+                    if alt_name in person[POL_POS]:
+                        person[POL_POS].strip()
+                    person.update({PER_NAME: alt_name})
                 if DEP in p[-1]:
                     p[-1]['vars'].append(person)
 
-
-                # print '-=-'*10
-
-    pprint(p)
-    print objects
+    for sec in p:
+        dep_value = sec[DEP]
+        dep_obj = {DEP: dep_value}
+        for x in sec['vars']:
+            x.update(dep_obj)
+            objects.append(x)
     return objects
 
 
 def get_entities(persons):
     entities = []
     for person in persons:
-        name = person['name']
-        logo = person['picture_url']
-        unique_id = _create_id([name, logo])
-        fields = [{'tag': 'person_name', 'value': name}, {'tag': 'picture_url', 'value': logo}]
-        entities.append(_create_entity(unique_id, 'person', name, fields))
+        name = person[PER_NAME]
+        position = person[POL_POS]
+
+        tags = [PER_NAME, POL_POS]
+        values = [name, position.split('(')[0]]
+        if DEP in person:
+            deprtmt = person[DEP]
+            values.append(deprtmt)
+            tags.append(DEP)
+        unique_id = _create_id([_.encode('utf-8') for _ in values])
+
+        fields = [
+            {'tag': t, 'value': v} for t, v in zip(tags, values)
+        ]
+        p_name = re.sub("^\s+", "", name.split(".")[-1].strip())
+        entities.append(_create_entity(unique_id, 'person', p_name, fields))
+
+
     return entities
 
 
@@ -153,8 +164,6 @@ def main():
     main_obj = get_rows([_main_url, _second_url])
 
     for entity in get_entities(main_obj):
-        # helpers.check(entity)
-        print entity
         helpers.emit(entity)
 
 # main scraper
