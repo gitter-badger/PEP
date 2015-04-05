@@ -7,11 +7,21 @@ from bs4 import BeautifulSoup
 
 import helpers
 
-_main_url = 'http://www.colima-estado.gob.mx/d/tema.php?iw=MTI4Mg=='
+_main_url = 'http://www.chiapas.gob.mx/funcionarios/estatal/ejecutivo'
 
+OFFICE = 'office'
 POL_POS = 'political_position'
 PER_NAME = 'person_name'
-PIC = 'picture_url'
+DEP = 'department_name'
+PER_URL = 'url'
+
+
+def _custom_opener(url, linux=False):
+    if linux:
+        return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
+    else:
+        from urllib2 import urlopen
+        return BeautifulSoup(urlopen(url))
 
 
 def _create_entity(_id, entity_type, obj_name, fields):
@@ -56,57 +66,48 @@ def _create_id(args):
 
 
 def get_rows(url):
-    main_page = BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
-    main_rows = main_page.find('table', {'cellpadding': "0", 'cellspacing': "1", 'width': "98%"}).find_all('tr')
+    _container = []
+    main_page = _custom_opener(url)
+    main_rows = main_page.find('div', {'class': "ser-cont", 'id': "resultado"})
+    for i, v in zip(main_rows.find_all('h2'), main_rows.find_all('ul')):
+        print '-=-'*20
+        for obj in [{DEP: _bs_to_utf(i), OFFICE: _bs_to_utf(_), PER_URL: _main_url + _.find('a')['href'].strip('ejecutivo')} for _ in v]:
+            _container.append(obj)
 
-    objects = []
-
-    for _r in main_rows:
-        sub_td = _r.find_all('td')
-
-        for td in sub_td:
-            if _bs_to_utf(td):
-
-                image = td.find('img')['src']
-                person_name = None
-                political_position = None
-
-                if len(td.find_all('strong')) > 1:
-                    person_name, political_position = [_bs_to_utf(_) for _ in td.find_all('strong')]
-
-                else:
-                    if td.find('a'):
-                        links = td.find_all('a')
-                        for link in links:
-                            if link and link.text.startswith('Curriculum'):
-                                link.extract()
-                        link = td.find('a')
-                        political_position = _bs_to_utf(link.extract())
-                        person_name = ' '.join([_ for _ in _bs_to_utf(td).split('\n') if _])
-
-                obj = {PER_NAME: person_name, POL_POS: political_position, PIC: image}
-                objects.append(obj)
-
-    return objects
+    return _container
 
 
-def get_entities(persons):
+def get_entities(objects):
     entities = []
-    for person in persons:
-        name = person[PER_NAME]
-        position = person[POL_POS]
-        image = person[PIC]
+    for person in objects:
+        office = person[OFFICE]
+        direct_url = person[PER_URL]
+        dep_name = person[DEP]
 
-        tags = [PER_NAME, POL_POS, PIC]
-        values = [name, position, image]
+        sub_page = _custom_opener(direct_url)
 
-        unique_id = _create_id([_.encode('utf-8') for _ in values])
+        try:
+            h1s = sub_page.find('div', {'class': 'N2'}).find_all('h1')
+            name, pos = h1s
+            try:
+                person_name = _bs_to_utf(name)
+                if person_name:
+                    pol_pos = _bs_to_utf(pos)
 
-        fields = [
-            {'tag': t, 'value': v} for t, v in zip(tags, values)
-        ]
+                    tags = [OFFICE, PER_NAME, POL_POS, PER_URL, DEP]
+                    values = [office, person_name, pol_pos, direct_url, dep_name]
 
-        entities.append(_create_entity(unique_id, 'person', name, fields))
+                    unique_id = _create_id([_.encode('utf-8') for _ in values])
+
+                    fields = [
+                        {'tag': t, 'value': v} for t, v in zip(tags, values)
+                    ]
+                    p_name = re.sub("^\s+", "", person_name.split(".")[-1].strip())
+                    entities.append(_create_entity(unique_id, 'person', p_name, fields))
+            except:
+                continue
+        except:
+            continue
 
     return entities
 
