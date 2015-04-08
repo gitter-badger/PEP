@@ -7,6 +7,8 @@ Desktop.ini
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
+$scrapersCache/
+
 
 # Windows Installer files
 *.cab
@@ -42,4 +44,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+.gitattributes
+scrapersCache
 var
