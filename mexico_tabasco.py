@@ -29,8 +29,7 @@ def _custom_opener(url, linux=False):
         return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
     else:
         from urllib2 import urlopen
-        # print url
-        return BeautifulSoup(urlopen(url))
+        return BeautifulSoup(urlopen(url).read())
 
 
 def _create_entity(_id, entity_type, obj_name, fields, aka=False):
@@ -80,7 +79,7 @@ def _create_id(args):
 
 
 def get_rows(url):
-    main_page = _custom_opener(url, True)
+    main_page = _custom_opener(url, 0)
     main_rows = [{DEP: _.text,
                   PER_URL: '{0}/Portal/{1}'.format(_host, _.get('href'))} for _ in
                  main_page.find_all('a', {'class': 'Estilo3'})
@@ -88,8 +87,8 @@ def get_rows(url):
                  and 'WFrmPresentarPortal.aspx?' in _.get('href')]
 
     for row in main_rows:
-        link = row['url']
-        sub_page = _custom_opener(link, True)
+        link = row[PER_URL]
+        sub_page = _custom_opener(link, 0)
         right_menu = sub_page.find('div', {'id': 'UCtrlConsultarDependenciaDetalle_TabTitular_pnlDatosT'})
         left_menu = sub_page.find('div', {'id': 'UCtrlConsultarDependenciaDetalle_PestanaDetalles_body'})
 
@@ -98,7 +97,10 @@ def get_rows(url):
 
             if person_name and person_name != 'aaaaaaaaaaaaa':
                 person_image_url = right_menu.find('img', {'id': IMG}).get('src')
-                row.update({PER_NAME: person_name, PIC_URL: person_image_url})
+                row.update({
+                    PER_NAME: person_name,
+                    PIC_URL: person_image_url
+                })
 
         if left_menu:
             new_man = {}
@@ -108,6 +110,7 @@ def get_rows(url):
                 pic_url = left_menu.find('img', {'id': IMG_2}).get('src')
                 # person_image_url = right_menu.find('img', {'id': IMG}).get('src')
                 # row.update({ADD_NAME: person_name})
+
                 new_man.update({
                     PER_NAME: person_name,
                     PER_URL: link,
@@ -136,17 +139,6 @@ def get_entities(objects):
             person_name = re.sub("^\s+", "", person_name.split(".")[-1].strip())
             tags = [PER_NAME, PIC_URL, PER_URL, DEP]
             values = [person_name, pic_uri, direct_url, department]
-
-            # if ADD_NAME in person:
-            #     tags.append(ADD_NAME)
-            #     add_name = re.sub("^\s+", "", add_name.split(".")[-1].strip())
-            #
-            #     if add_name:
-            #         person.update({
-            #             'aka': {
-            #                 'name': add_name
-            #             }
-            #         })
 
             unique_id = _create_id([_.encode('utf-8') for _ in values])
             fields = [
