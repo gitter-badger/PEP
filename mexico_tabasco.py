@@ -29,6 +29,7 @@ def _custom_opener(url, linux=False):
         return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
     else:
         from urllib2 import urlopen
+
         return BeautifulSoup(urlopen(url).read())
 
 
@@ -79,77 +80,78 @@ def _create_id(args):
 
 
 def get_rows(url):
-    main_page = _custom_opener(url, 0)
+    main_page = _custom_opener(url, True)
     main_rows = [{DEP: _.text,
                   PER_URL: '{0}/Portal/{1}'.format(_host, _.get('href'))} for _ in
                  main_page.find_all('a', {'class': 'Estilo3'})
                  if _.get('href')
                  and 'WFrmPresentarPortal.aspx?' in _.get('href')]
-
+    sec_rows = []
     for row in main_rows:
-        link = row[PER_URL]
-        sub_page = _custom_opener(link, 0)
-        right_menu = sub_page.find('div', {'id': 'UCtrlConsultarDependenciaDetalle_TabTitular_pnlDatosT'})
-        left_menu = sub_page.find('div', {'id': 'UCtrlConsultarDependenciaDetalle_PestanaDetalles_body'})
+        if PER_URL in row:
+            link = row[PER_URL]
 
-        if right_menu:
-            person_name = right_menu.find('span', {'id': SPAN}).text
+            sub_page = _custom_opener(link, True)
+            right_menu = sub_page.find('div', {'id': 'UCtrlConsultarDependenciaDetalle_TabTitular_pnlDatosT'})
+            left_menu = sub_page.find('div', {'id': 'UCtrlConsultarDependenciaDetalle_PestanaDetalles_body'})
 
-            if person_name and person_name != 'aaaaaaaaaaaaa':
-                person_image_url = right_menu.find('img', {'id': IMG}).get('src')
-                row.update({
-                    PER_NAME: person_name,
-                    PIC_URL: person_image_url
-                })
+            if right_menu:
+                person_name = right_menu.find('span', {'id': SPAN}).text
 
-        if left_menu:
-            new_man = {}
-            person_name = left_menu.find('span', {'id': SPAN_2}).text
+                if person_name and person_name != 'aaaaaaaaaaaaa':
+                    person_image_url = right_menu.find('img', {'id': IMG}).get('src')
+                    row.update({PER_NAME: person_name, PIC_URL: person_image_url})
 
-            if person_name and person_name != 'aaaaaaaaaaaaa':
-                pic_url = left_menu.find('img', {'id': IMG_2}).get('src')
-                # person_image_url = right_menu.find('img', {'id': IMG}).get('src')
-                # row.update({ADD_NAME: person_name})
+            if left_menu:
+                new_man = {}
+                person_name = left_menu.find('span', {'id': SPAN_2}).text
 
-                new_man.update({
-                    PER_NAME: person_name,
-                    PER_URL: link,
-                    DEP: row[DEP],
-                    PIC_URL: pic_url
-                })
-            main_rows.append(new_man)
+                if person_name and person_name != 'aaaaaaaaaaaaa':
+                    pic_url = left_menu.find('img', {'id': IMG_2}).get('src')
+                    per_obj = {
+                        PER_NAME: person_name,
+                        PER_URL: link,
+                        DEP: row[DEP],
+                        PIC_URL: pic_url
+                    }
+
+                    new_man.update(per_obj)
+
+                sec_rows.append(new_man)
+        else:
+            print row, 'P{debug}'
+
+    main_rows = main_rows + sec_rows
 
     return main_rows
 
 
 def get_entities(objects):
-    aka = False
     entities = []
     for person in objects:
         if PER_NAME in person:
             person_name = person[PER_NAME].rstrip()
+            if person_name != '.':
+                direct_url = person[PER_URL]
+                pic_uri = person[PIC_URL]
+                department = person[DEP]
 
-            direct_url = person[PER_URL]
-            pic_uri = person[PIC_URL]
-            department = person[DEP]
+                if person_name.endswith('.'):
+                    person_name = person_name[:-1]
 
-            if person_name.endswith('.'):
-                person_name = person_name[:-1]
+                person_name = re.sub("^\s+", "", person_name.split(".")[-1].strip())
+                tags = [PER_NAME]
+                values = [person_name]
 
-            person_name = re.sub("^\s+", "", person_name.split(".")[-1].strip())
-            tags = [PER_NAME, PIC_URL, PER_URL, DEP]
-            values = [person_name, pic_uri, direct_url, department]
+                _tags = [PER_URL, PIC_URL, DEP]
+                _values = [direct_url, pic_uri, department]
+                unique_id = _create_id([_.encode('utf-8') for _ in values])
+                tags_complete = [{'tag': t, 'value': v} for t, v in zip(_tags, _values)]
+                fields = [{'name': t, 'value': v} for t, v in zip(tags, values)]
+                fields = fields + tags_complete
 
-            unique_id = _create_id([_.encode('utf-8') for _ in values])
-            fields = [
-                {'tag': t, 'value': v} for t, v in zip(tags, values)
-            ]
-
-            if 'aka' in person:
-                aka = person['aka']
-
-            entity = _create_entity(unique_id, 'person', person_name, fields, aka)
-            entities.append(entity)
+                entity = _create_entity(unique_id, 'person', person_name, fields)
+                entities.append(entity)
 
     return entities
 
