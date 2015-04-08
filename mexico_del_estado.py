@@ -70,7 +70,7 @@ def get_rows(url):
     main_page = _custom_opener(url)
     main_rows = main_page.find('div', {'class': "ser-cont", 'id': "resultado"})
     for i, v in zip(main_rows.find_all('h2'), main_rows.find_all('ul')):
-        print '-=-'*20
+
         for obj in [{DEP: _bs_to_utf(i), OFFICE: _bs_to_utf(_), PER_URL: _main_url + _.find('a')['href'].strip('ejecutivo')} for _ in v]:
             _container.append(obj)
 
