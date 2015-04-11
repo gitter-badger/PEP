@@ -24,4 +24,7 @@
   <component name="RunManager">
     <list size="0" />
   </component>
+  <component name="TaskProjectConfiguration">
+    <server type="Trello" url="trello.com" />
+  </component>
 </project>

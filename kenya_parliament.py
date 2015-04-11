@@ -161,8 +161,8 @@ def main():
     main_obj = get_all_persons([_main_url, _second_url])
 
     for entity in get_entities(main_obj):
-        helpers.check(entity)
-        # helpers.emit(entity)
+        # helpers.check(entity)
+        helpers.emit(entity)
 
 # main scraper
 if __name__ == "__main__":
