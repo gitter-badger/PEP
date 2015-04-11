@@ -148,11 +148,11 @@ def get_entities(persons):
         # values = [name, position.split('(')[0]]
         unique_id = _create_id([_.encode('utf-8') for _ in values])
 
-        # fields = [
-        # {'tag': t, 'value': v} for t, v in zip(tags, values)
-        # ]
-        # p_name = re.sub("^\s+", "", name.split(".")[-1].strip())
-        entities.append(_create_entity(unique_id, 'person', name, person))
+        fields = [
+            {'tag': t, 'value': v} for t, v in person.items()
+        ]
+
+        entities.append(_create_entity(unique_id, 'person', name, fields))
 
     return entities
 
