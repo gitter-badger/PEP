@@ -20,7 +20,6 @@ POL_REG = 'political_region'
 POL_PRT = 'political_party'
 PER_NAME = 'person_name'
 PIC_URL = 'picture_url'
-DEP = 'department'
 PERSON_URL = 'url'
 
 
@@ -49,15 +48,6 @@ def _create_entity(_id, entity_type, obj_name, fields, aka=False):
     return default
 
 
-def _bs_to_utf(bs):
-    """
-    Convert bs4 object to encoded value
-    :param bs: bs object
-    :return: unicode
-    """
-    return bs.text.strip()
-
-
 def _create_id(args):
     """
     Generate ID for entity
@@ -78,7 +68,8 @@ def _custom_opener(url, linux=False):
 
         try:
             return BeautifulSoup(urlopen(url).read())
-        except:
+        except Exception, e:
+            print e
             pass
 
 
@@ -136,16 +127,7 @@ def get_entities(persons):
     entities = []
     for person in persons:
         name = person[PER_NAME]
-        person_url = person[PERSON_URL]
-        picture_url = person[PIC_URL]
-        political_region = person[POL_REG]
-        political_party = person[POL_PRT]
-        position = person[POL_POS]
-
-        # tags = [PER_NAME, POL_POS]
-        tags = person.keys()
         values = person.values()
-        # values = [name, position.split('(')[0]]
         unique_id = _create_id([_.encode('utf-8') for _ in values])
 
         fields = [
