@@ -3,7 +3,6 @@
 import hashlib
 import re
 from urlparse import parse_qs
-from pprint import pprint
 
 from bs4 import BeautifulSoup
 
@@ -119,7 +118,7 @@ def get_all_persons(urls):
                     PERSON_URL: person_url,
                     PIC_URL: _host + person_img
                 }
-                pprint(person_obj)
+
                 for subj in str(p_text).split('<br/>'):
                     try:
                         x = {'Constituency': POL_REG, 'Party': POL_PRT, '<p>Title': POL_POS}
@@ -137,21 +136,23 @@ def get_entities(persons):
     entities = []
     for person in persons:
         name = person[PER_NAME]
+        person_url = person[PERSON_URL]
+        picture_url = person[PIC_URL]
+        political_region = person[POL_REG]
+        political_party = person[POL_PRT]
         position = person[POL_POS]
 
-        tags = [PER_NAME, POL_POS]
-        values = [name, position.split('(')[0]]
-        if DEP in person:
-            deprtmt = person[DEP]
-            values.append(deprtmt)
-            tags.append(DEP)
+        # tags = [PER_NAME, POL_POS]
+        tags = person.keys()
+        values = person.values()
+        # values = [name, position.split('(')[0]]
         unique_id = _create_id([_.encode('utf-8') for _ in values])
 
-        fields = [
-            {'tag': t, 'value': v} for t, v in zip(tags, values)
-        ]
-        p_name = re.sub("^\s+", "", name.split(".")[-1].strip())
-        entities.append(_create_entity(unique_id, 'person', p_name, fields))
+        # fields = [
+        # {'tag': t, 'value': v} for t, v in zip(tags, values)
+        # ]
+        # p_name = re.sub("^\s+", "", name.split(".")[-1].strip())
+        entities.append(_create_entity(unique_id, 'person', name, person))
 
     return entities
 
@@ -160,7 +161,8 @@ def main():
     main_obj = get_all_persons([_main_url, _second_url])
 
     for entity in get_entities(main_obj):
-        helpers.emit(entity)
+        helpers.check(entity)
+        # helpers.emit(entity)
 
 # main scraper
 if __name__ == "__main__":
