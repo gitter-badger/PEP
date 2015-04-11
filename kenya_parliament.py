@@ -144,6 +144,7 @@ def main():
 
     for entity in get_entities(main_obj):
         # helpers.check(entity)
+
         helpers.emit(entity)
 
 # main scraper
