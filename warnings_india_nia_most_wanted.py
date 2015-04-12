@@ -9,7 +9,7 @@ import helpers
 
 
 _host = 'http://www.nia.gov.in'
-_part_url = '{host}/wanted'.format(host=_host)
+_part_url = '{host}/wanted/'.format(host=_host)
 _main_url = '{part}/wanted.aspx'.format(part=_part_url)
 
 POL_POS = 'political_position'
@@ -82,13 +82,13 @@ def get_all_persons(url):
             person = {}
             image_url_part = (_.get('src').lstrip('.') for _ in item.find_all('img') if 'jpg' in _.get('src'))
             try:
-                picture_url = _host + '/wanted' + next(image_url_part)
+                picture_url = _part_url + next(image_url_part)
             except Exception:
                 picture_url = 'unsupported image type'
 
             link_with_name = item.find_all('a').pop()
             link_with_text = link_with_name.text
-            person[PERSON_URL] = _host + '/wanted' + link_with_name.get('href')
+            person[PERSON_URL] = _part_url + link_with_name.get('href')
             person[PIC_URL] = picture_url
 
             if '@' in link_with_text:
