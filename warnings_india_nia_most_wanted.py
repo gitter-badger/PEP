@@ -73,7 +73,7 @@ def _custom_opener(url, linux=False):
 
 def get_all_persons(url):
     persons = []
-    main_page = _custom_opener(url)
+    main_page = _custom_opener(url, True)
     rows = main_page.find('table', {'border': '1px'}).find_all('tr')
 
     for row in rows:
