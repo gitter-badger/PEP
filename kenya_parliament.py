@@ -13,7 +13,7 @@ _host = 'http://www.parliament.go.ke'
 _main_url = '{host}/index.php/the-national-assembly/members'.format(host=_host)
 _second_url = '{host}/index.php/the-senate/senators'.format(host=_host)
 
-_page = 'http://www.parliament.go.ke/the-national-assembly/members?limitstart={page_counter}'
+_page = 'http://www.parliament.go.ke/{root}?limitstart={page_counter}'
 
 POL_POS = 'political_position'
 POL_REG = 'political_region'
@@ -60,7 +60,7 @@ def _create_id(args):
     return hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
 
 
-def _custom_opener(url, linux=False):
+def _custom_opener(url, linux=True):
     if linux:
         return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
     else:
@@ -75,12 +75,16 @@ def _custom_opener(url, linux=False):
 
 def get_all_persons(urls):
     persons = []
-    main_page = _custom_opener(urls[0])
-    second_page = _custom_opener(urls[1])
+    main_page = _custom_opener(urls[0], linux=True)
+    second_page = _custom_opener(urls[1], linux=True)
 
     settings = {
-        'first': {'link_part': '/the-national-assembly/members?start', 'page': main_page},
-        'second': {'link_part': '/the-senate/senators?start', 'page': second_page}
+        'first': {'link_part': '/the-national-assembly/members?start',
+                  'page': main_page,
+                  'root': '/the-national-assembly/members'},
+        'second': {'root': '/the-senate/senators',
+                   'link_part': '/the-senate/senators?start',
+                   'page': second_page}
     }
 
     def __pagination(element):
@@ -88,20 +92,22 @@ def get_all_persons(urls):
         parsed_id = parse_qs(last_url)
         last_page_id = parsed_id.get(element['link_part']).pop()
         for page_count in range(0, int(last_page_id) + 10, 10):
-            yield _page.format(page_counter=page_count)
+            yield _page.format(root=element['root'], page_counter=page_count)
 
     for _set in settings:
         for page in __pagination(settings[_set]):
-            sub_page = _custom_opener(page)
+            sub_page = _custom_opener(page, linux=True)
             all_rows = sub_page.find_all('tr')[1:]
             for row in all_rows:
                 bs_link = row.find('a')
                 person_name = bs_link.text
                 person_url = _host + bs_link.get('href')
 
-                open_person_url = _custom_opener(person_url)
-
-                body = open_person_url.find('div', {'class': 'itemBody'})
+                open_person_url = _custom_opener(person_url, linux=True)
+                try:
+                    body = open_person_url.find('div', {'class': 'itemBody'})
+                except:
+                    continue
                 person_img = body.find('img').get('src')
                 p_text = body.find('p')
                 person_obj = {
@@ -133,6 +139,11 @@ def get_entities(persons):
         fields = [
             {'tag': t, 'value': v} for t, v in person.items()
         ]
+        if person.get(POL_POS):
+            if person[POL_POS] == 'Legislator':
+                fields.append({'tag': POL_POS, 'value': 'Member of Parliament'})
+        else:
+            fields.append({'tag': POL_POS, 'value': 'Senator'})
 
         entities.append(_create_entity(unique_id, 'person', name, fields))
 
