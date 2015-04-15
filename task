@@ -1,7 +1,0 @@
-Scrape minimum number of entities	160
-Contains given name or AKA entry, special field "name: person_name" field	Edmund Joensen
-Contains a field with "tag": "url", where the value is the url of the page containing person data	http://www.thedanishparliament.dk/Members/injolo.aspx
-Contains a field "tag": "picture_ul", with the value being the url of a picture on page	http://www.thedanishparliament.dk/Members/~/media/CV/Foto/20111/EL/Per_Clausen/Per_Clausenx133.jpg.ashx
-Contains a field "tag": "political_party" , where the value is given political party	The Red-Green Alliance
-Contains a field "tag": "date_of_birth", where the value is date of birth of a scraped person	1983-07-24
-Contains a field "tag": "place_of_birth", where the value is place of birth of a scraped person	Fjerritslev
