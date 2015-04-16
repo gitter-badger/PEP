@@ -1,8 +1,10 @@
-import helpers
-from bs4 import BeautifulSoup
 import hashlib
 import re
+
+from bs4 import BeautifulSoup
 from selenium import webdriver
+
+import helpers
 
 
 _base_url = "https://www.congress.gov/members?pageSize=250&page="

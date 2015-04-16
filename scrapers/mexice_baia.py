@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 import helpers
 
+
 _main_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete.jsp'
 _second_url = 'http://www.bajacalifornia.gob.mx/portal/gobierno/gabinete_ampliado.jsp'
 _tel_index = re.compile('\([0-9]{3,4}\)')
@@ -61,6 +62,7 @@ def get_rows(urls):
     # main_page = BeautifulSoup(helpers.fetch_string(urls[0], cache_hours=6))
     # other_page = BeautifulSoup(helpers.fetch_string(urls[1], cache_hours=6))
     from urllib2 import urlopen
+
     main_page = BeautifulSoup(urlopen(urls[0]))
     other_page = BeautifulSoup(urlopen(urls[1]))
 
@@ -94,7 +96,8 @@ def get_rows(urls):
     p = []
 
     for st_row in second_table_rows:
-        person_container = st_row.find('span', {'class': 'linktextoResaltado'}) or st_row.find('p', {'class': 'linktextoResaltado'})
+        person_container = st_row.find('span', {'class': 'linktextoResaltado'}) or st_row.find('p', {
+        'class': 'linktextoResaltado'})
         header = st_row.find('td', {'class': 'subtitulos'})
         prob_name = st_row.find('span', {'class': 'textoResaltado11'})
         email_tag = st_row.find('span', {'class': 'linkrutagris'})
@@ -155,7 +158,6 @@ def get_entities(persons):
         ]
         p_name = re.sub("^\s+", "", name.split(".")[-1].strip())
         entities.append(_create_entity(unique_id, 'person', p_name, fields))
-
 
     return entities
 

@@ -1,8 +1,10 @@
 import itertools
-import helpers
 import re
-from bs4 import BeautifulSoup
 import urlparse
+
+from bs4 import BeautifulSoup
+
+import helpers
 
 
 _base_url = "https://crimestoppers-uk.org/most-wanted/?Page={0}"

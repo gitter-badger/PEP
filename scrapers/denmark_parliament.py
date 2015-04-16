@@ -92,7 +92,8 @@ def _get_people(party_obj):
                 fields.append(
                     {
                         'tag': 'picture_url',
-                        'value': profile_pic.replace('~/media/', 'Members/~/media/').replace('84', '133').replace('x84', 'x133')
+                        'value': profile_pic.replace('~/media/', 'Members/~/media/').replace('84', '133').replace('x84',
+                                                                                                                  'x133')
                     }
                 )
 

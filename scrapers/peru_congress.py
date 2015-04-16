@@ -8,20 +8,15 @@ from bs4 import BeautifulSoup
 import helpers
 
 
-_host = 'http://transparencia.qroo.gob.mx'
-_main_url = '{}/portal/Transparencia/BusquedaDirectorioServidor.php'.format(_host)
+_main_url = 'http://www4.congreso.gob.pe/_ingles/lista_pleno.htm'
 
+OFFICE = 'office'
 POL_POS = 'political_position'
 PER_NAME = 'person_name'
-ADD_NAME = 'additional_name'
 DEP = 'department_name'
 PER_URL = 'url'
 PIC_URL = 'picture_url'
 IMAGE = '/imagenes/top.jpg'
-SPAN = 'UCtrlConsultarDependenciaDetalle_TabTitular_pnlDatosT_lblNombreTransparencia'
-SPAN_2 = 'UCtrlConsultarDependenciaDetalle_PestanaDetalles_pnlDatos_lblResponsableSolicitud'
-IMG = 'UCtrlConsultarDependenciaDetalle_TabTitular_pnlDatosT_imgFotoTransparencia'
-IMG_2 = 'UCtrlConsultarDependenciaDetalle_PestanaDetalles_pnlDatos_Foto'
 
 
 def _custom_opener(url, linux=False):
@@ -29,10 +24,11 @@ def _custom_opener(url, linux=False):
         return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
     else:
         from urllib2 import urlopen
-        return BeautifulSoup(urlopen(url).read())
+
+        return BeautifulSoup(urlopen(url))
 
 
-def _create_entity(_id, entity_type, obj_name, fields, aka=False):
+def _create_entity(_id, entity_type, obj_name, fields):
     """
     easy create entity using input data
 
@@ -42,7 +38,7 @@ def _create_entity(_id, entity_type, obj_name, fields, aka=False):
     :param fields: list with {tags and values}
     :return: dict
     """
-    default = {
+    return {
         "_meta": {
             "id": _id,
             "entity_type": entity_type
@@ -50,11 +46,6 @@ def _create_entity(_id, entity_type, obj_name, fields, aka=False):
         "name": obj_name,
         "fields": fields
     }
-
-    if aka:
-        # {'aka': 'name': '??'}
-        default.update({'aka': [aka]})
-    return default
 
 
 def _bs_to_utf(bs):
@@ -79,44 +70,35 @@ def _create_id(args):
 
 
 def get_rows(url):
-    container = []
-    main_page = _custom_opener(url, 0)
+    _container = []
+    main_page = _custom_opener(url, True)
+    main_rows = main_page.find('tbody').find_all('tr')
 
-    main_table_rows = main_page.find('table', {'width': '100%', 'border': '0', 'cellspacing': '2'}).find_all('tr')[1:]
-    # print len(main_table_rows)
-    c = 0
-    for row in main_table_rows:
+    for row in main_rows:
+        link = row.find('a')
+        if link:
+            obj = {PER_URL: link['href'].replace('.htm', '/cargos.asp').replace('www', 'www4'),
+                   PIC_URL: link['href'].replace('.htm', IMAGE).replace('www', 'www4'), PER_NAME: _bs_to_utf(link)}
+            _container.append(obj)
 
-        data = row.find_all('td')[:2]
-        person_name, other_info = data
-        pol_pos = _bs_to_utf(other_info.find('strong').extract())
-        administration = _bs_to_utf(other_info)
-        obj = {PER_NAME: _bs_to_utf(person_name), POL_POS: pol_pos, DEP: administration}
-        container.append(obj)
-
-    return container
+    return _container
 
 
 def get_entities(objects):
     entities = []
     for person in objects:
-        print person
         person_name = person[PER_NAME]
-        department = person[DEP]
-        pol_pos = person[POL_POS]
+        direct_url = person[PER_URL]
+        pic_uri = person[PIC_URL]
 
-        # person_name = re.sub("^\s+", "", person_name.split(".")[-1].strip())
-        tags = [PER_NAME, DEP, POL_POS]
-        values = [person_name, department, pol_pos]
-
+        tags = [PER_NAME, PIC_URL, PER_URL]
+        values = [person_name, pic_uri, direct_url]
         unique_id = _create_id([_.encode('utf-8') for _ in values])
-
         fields = [
             {'tag': t, 'value': v} for t, v in zip(tags, values)
         ]
 
-        entity = _create_entity(unique_id, 'person', person_name, fields)
-        entities.append(entity)
+        entities.append(_create_entity(unique_id, 'person', person_name, fields))
 
     return entities
 

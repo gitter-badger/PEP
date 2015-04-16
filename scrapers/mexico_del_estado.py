@@ -1,4 +1,3 @@
-
 # coding=utf-8
 
 import hashlib
@@ -8,15 +7,14 @@ from bs4 import BeautifulSoup
 
 import helpers
 
-_main_url = 'http://www4.congreso.gob.pe/_ingles/lista_pleno.htm'
+
+_main_url = 'http://www.chiapas.gob.mx/funcionarios/estatal/ejecutivo'
 
 OFFICE = 'office'
 POL_POS = 'political_position'
 PER_NAME = 'person_name'
 DEP = 'department_name'
 PER_URL = 'url'
-PIC_URL = 'picture_url'
-IMAGE = '/imagenes/top.jpg'
 
 
 def _custom_opener(url, linux=False):
@@ -24,6 +22,7 @@ def _custom_opener(url, linux=False):
         return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
     else:
         from urllib2 import urlopen
+
         return BeautifulSoup(urlopen(url))
 
 
@@ -70,13 +69,13 @@ def _create_id(args):
 
 def get_rows(url):
     _container = []
-    main_page = _custom_opener(url, True)
-    main_rows = main_page.find('tbody').find_all('tr')
+    main_page = _custom_opener(url)
+    main_rows = main_page.find('div', {'class': "ser-cont", 'id': "resultado"})
+    for i, v in zip(main_rows.find_all('h2'), main_rows.find_all('ul')):
 
-    for row in main_rows:
-        link = row.find('a')
-        if link:
-            obj = {PER_URL: link['href'].replace('.htm', '/cargos.asp').replace('www', 'www4'), PIC_URL: link['href'].replace('.htm', IMAGE).replace('www', 'www4'), PER_NAME: _bs_to_utf(link)}
+        for obj in [
+            {DEP: _bs_to_utf(i), OFFICE: _bs_to_utf(_), PER_URL: _main_url + _.find('a')['href'].strip('ejecutivo')} for
+            _ in v]:
             _container.append(obj)
 
     return _container
@@ -85,19 +84,34 @@ def get_rows(url):
 def get_entities(objects):
     entities = []
     for person in objects:
-        person_name = person[PER_NAME]
+        office = person[OFFICE]
         direct_url = person[PER_URL]
-        pic_uri = person[PIC_URL]
+        dep_name = person[DEP]
 
+        sub_page = _custom_opener(direct_url)
 
-        tags = [PER_NAME, PIC_URL, PER_URL]
-        values = [person_name, pic_uri, direct_url]
-        unique_id = _create_id([_.encode('utf-8') for _ in values])
-        fields = [
-            {'tag': t, 'value': v} for t, v in zip(tags, values)
-        ]
+        try:
+            h1s = sub_page.find('div', {'class': 'N2'}).find_all('h1')
+            name, pos = h1s
+            try:
+                person_name = _bs_to_utf(name)
+                if person_name:
+                    pol_pos = _bs_to_utf(pos)
 
-        entities.append(_create_entity(unique_id, 'person', person_name, fields))
+                    tags = [OFFICE, PER_NAME, POL_POS, PER_URL, DEP]
+                    values = [office, person_name, pol_pos, direct_url, dep_name]
+
+                    unique_id = _create_id([_.encode('utf-8') for _ in values])
+
+                    fields = [
+                        {'tag': t, 'value': v} for t, v in zip(tags, values)
+                    ]
+                    p_name = re.sub("^\s+", "", person_name.split(".")[-1].strip())
+                    entities.append(_create_entity(unique_id, 'person', p_name, fields))
+            except:
+                continue
+        except:
+            continue
 
     return entities
 

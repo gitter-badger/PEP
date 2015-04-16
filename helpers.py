@@ -1,7 +1,5 @@
 import json
 import threading
-import requests
-import requests.exceptions
 import itertools
 import sys
 import time
@@ -9,12 +7,16 @@ import re
 import hashlib
 import tempfile
 import os
-import dateutil.parser
 import subprocess
+
+import requests
+import requests.exceptions
+import dateutil.parser
+
+
 
 
 # cache hash
-# _cache_dir_path = "/var/data/scrapersCache"
 _cache_dir_path = "./var/data/scrapersCache"
 _cache_cleanup_done = False
 _output_lock = threading.RLock()
