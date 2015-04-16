@@ -33,7 +33,7 @@ Please also create the directory ./var/data/scrapersCache on your system, to ena
 
 # Helper Methods
 You can assume the file helpers.py exists, and can import with the following statement:
-Open in Python Editor 
+
 ```
 import helpers
 ```
