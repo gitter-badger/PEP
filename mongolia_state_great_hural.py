@@ -1,10 +1,7 @@
 # coding=utf-8
 from collections import deque
-import hashlib
-import re
 
-from bs4 import BeautifulSoup
-
+from utils import custom_opener, create_entity, create_id
 import helpers
 
 
@@ -17,8 +14,7 @@ PER_NAME = 'person_name'
 PIC_URL = 'picture_url'
 PERSON_URL = 'url'
 
-
-'''
+TEST_DATA = '''
 Rule Name	Rule Value
 Scrape minimum number of entities	40
 Contains given name or AKA entry, special field "name: person_name" field	Ulziisaikhan ENKHTUVSHIN
@@ -32,59 +28,10 @@ Scrape minimum number of entities	30
 Contains a field "tag": "political_position", where value is given political position	Vice Chairman of the State Great Hural (Parliament) of Mongolia
 '''
 
-def _create_entity(_id, entity_type, obj_name, fields, aka=False):
-    """
-    easy create entity using input data
-
-    :param _id: unique id of entity
-    :param entity_type: organisation | person etc
-    :param obj_name: formal name
-    :param fields: list with {tags and values}
-    :return: dict
-    """
-    default = {
-        "_meta": {
-            "id": _id,
-            "entity_type": entity_type
-        },
-        "name": obj_name,
-        "fields": fields
-    }
-
-    if aka:
-        # {'aka': 'name': '??'}
-        default.update({'aka': [aka]})
-    return default
-
-
-def _create_id(args):
-    """
-    Generate ID for entity
-    :param args: strings
-    :return: hashsum
-    """
-    if not isinstance(args, list):
-        args = [args]
-    conc_names = ''.join([_.decode('utf-8') for _ in args])
-    return hashlib.sha224((re.sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
-
-
-def _custom_opener(url, linux=True):
-    if linux:
-        return BeautifulSoup(helpers.fetch_string(url, cache_hours=6))
-    else:
-        from urllib2 import urlopen
-
-        try:
-            return BeautifulSoup(urlopen(url).read())
-        except Exception, e:
-            print e
-            pass
-
 
 def get_all_persons(url):
     persons = []
-    main_page = _custom_opener(url, linux=True)
+    main_page = custom_opener(url, linux=True)
 
     for row in main_page.find('div', {'class': 'span9'}).find_all('div', {'class': 'row'}):
         frames = row.find_all('a')
@@ -121,13 +68,13 @@ def get_entities(persons):
     for person in persons:
         name = person[PER_NAME]
         values = person.values()
-        unique_id = _create_id([_.encode('utf-8') for _ in values])
+        unique_id = create_id([_.encode('utf-8') for _ in values])
 
         fields = [
             {'tag': t.strip('!'), 'value': v} for t, v in person.items()
         ]
 
-        entities.append(_create_entity(unique_id, 'person', name, fields))
+        entities.append(create_entity(unique_id, 'person', name, fields))
 
     return entities
 
