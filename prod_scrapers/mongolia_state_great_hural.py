@@ -83,13 +83,7 @@ def get_all_persons(url):
     for row in main_page.find('div', {'class': 'span9'}).find_all('div', {'class': 'row'}):
         frames = row.find_all('a')
 
-        if len(frames) > 1:
-            first_in_row, second_in_row = row.find_all('a')
-        else:
-            second_in_row = None
-            first_in_row = frames.pop()
-
-        for _row in [first_in_row, second_in_row]:
+        for _row in frames:
             if _row:
                 person_url = _host + _row.get('href')
                 person_picture = _host + _row.find('img').get('src')
