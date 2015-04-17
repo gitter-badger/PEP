@@ -9,20 +9,22 @@ import helpers
 
 
 _host = 'http://www.nia.gov.in'
-_part_url = '{host}/wanted'.format(host=_host)
-_main_url = '/{part}/wanted.aspx'.format(part=_part_url)
+_part_url = '{host}/wanted/'.format(host=_host)
+_main_url = '{part}/wanted.aspx'.format(part=_part_url)
 
 POL_POS = 'political_position'
 POL_REG = 'political_region'
-POL_PRT = 'political_party'
 PER_NAME = 'person_name'
 PIC_URL = 'picture_url'
 ALIASES = 'Aliases'
 WANTED_IN = 'Wanted in'
 STATUS = 'Accused Status'
 ADDRESS = 'Address'
+CUSTOM_FIELD = 'custom_field_name'
 PERSON_URL = 'url'
-wanted_fields = [WANTED_IN, STATUS, ADDRESS]
+UNIFICATOR = '%'
+wanted_fields = [WANTED_IN, STATUS, ADDRESS, ALIASES]
+
 
 def _create_entity(_id, entity_type, obj_name, fields, aka=False):
     """
@@ -76,7 +78,7 @@ def _custom_opener(url, linux=False):
 
 def get_all_persons(url):
     persons = []
-    main_page = _custom_opener(url, linux=True)
+    main_page = _custom_opener(url, False)
     rows = main_page.find('table', {'border': '1px'}).find_all('tr')
 
     for row in rows:
@@ -92,19 +94,22 @@ def get_all_persons(url):
             link_with_name = item.find_all('a').pop()
             link_with_text = link_with_name.text
             person[PERSON_URL] = _part_url + link_with_name.get('href')
+
             purl = person[PERSON_URL]
             sub_page = _custom_opener(purl, linux=True)
             person[PIC_URL] = picture_url
             sub_page_trs = sub_page.find('table', {'rules': 'groups'}).find_all('tr')
+            tmp_custom_field = CUSTOM_FIELD
             for tr in sub_page_trs:
                 for field in wanted_fields:
                     if field in tr.text:
                         if 'Postal Address' not in tr.text:
+                            # person[tmp_custom_field] = field + ': ' + ' '.join(tr.find_all('td')[-1].text.split())
                             person[field] = ' '.join(tr.find_all('td')[-1].text.split())
+
 
             if '@' in link_with_text:
                 person[PER_NAME] = deque(link_with_text.split('@')).popleft()
-                person[ALIASES] = link_with_text.lstrip()
             else:
                 person[PER_NAME] = link_with_text
             persons.append(person)
@@ -117,11 +122,15 @@ def get_entities(persons):
     for person in persons:
         name = person[PER_NAME]
         values = person.values()
+
         unique_id = _create_id([_.encode('utf-8') for _ in values])
 
-        fields = [
-            {'tag': t, 'value': v} for t, v in person.items()
-        ]
+        fields = []
+        for t, v in person.items():
+            if t not in wanted_fields:
+                fields.append({'tag': t, 'value': v})
+            else:
+                fields.append({'name': t, 'value': v})
 
         entities.append(_create_entity(unique_id, 'person', name, fields))
 
