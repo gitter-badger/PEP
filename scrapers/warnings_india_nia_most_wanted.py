@@ -13,6 +13,7 @@ _part_url = '{host}/wanted/'.format(host=_host)
 _main_url = '{part}/wanted.aspx'.format(part=_part_url)
 
 POL_POS = 'political_position'
+
 POL_REG = 'political_region'
 PER_NAME = 'person_name'
 PIC_URL = 'picture_url'
