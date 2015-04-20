@@ -12,7 +12,8 @@ test_data = {
     'reg': 'BATMAN',
     'url': 'http://www.tbmm.gov.tr/develop/owa/milletvekillerimiz_sd.bilgi?p_donem=24&p_sicil=6843',
     # 'pos': '{}'.format('Kültür Ve Turizm Bakanı'.decode('utf-8'))
-    'pos': u'Milli Savunma Komisyonu \xdcyesi\xa0Akdeniz \xdd\xe7in Birlik Parlamenter Asamblesi T\xfcrk Grubu \xdcyesi'
+    'pos': u'Milli Savunma Komisyonu \xdcyesi\xa0Akdeniz \xdd\xe7in Birlik Parlamenter Asamblesi T\xfcrk Grubu \xdcyesi',
+    'quantity': 60
 }
 
 
@@ -82,7 +83,7 @@ class PoliticalPositionCheckTestCase(TurkeyCreateTestCase):
 class QuantityCheckTestCase(TurkeyCreateTestCase):
     def runTest(self):
         print len(self.persons)
-        self.assertGreaterEqual(len(self.persons), 10)
+        self.assertGreaterEqual(len(self.persons), test_data['quantity'])
 
 
 def main():
