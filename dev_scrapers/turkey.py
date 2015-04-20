@@ -4,7 +4,7 @@ import helpers
 
 
 _host = 'http://www.tbmm.gov.tr'
-_main_url = '{host}/develop/owa/milletvekillerimiz_sd.liste'.format(host=_host)
+MAIN_URL = '{host}/develop/owa/milletvekillerimiz_sd.liste'.format(host=_host)
 
 POL_POS = 'political_position'
 POL_REG = 'political_region'
@@ -54,12 +54,11 @@ def get_entities(persons):
         ]
 
         entities.append(create_entity(unique_id, 'person', name, fields))
-
     return entities
 
 
 def main():
-    main_obj = get_all_persons(_main_url)
+    main_obj = get_all_persons(MAIN_URL)
 
     for entity in get_entities(main_obj):
         # helpers.check(entity)

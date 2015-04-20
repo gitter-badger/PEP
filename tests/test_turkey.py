@@ -2,7 +2,7 @@
 import unittest
 
 from dev_scrapers import turkey as test_obj
-from dev_scrapers.turkey import get_entities, get_all_persons
+from dev_scrapers.turkey import get_entities, get_all_persons, MAIN_URL
 
 
 test_data = {
@@ -12,6 +12,7 @@ test_data = {
     'reg': 'BATMAN',
     'url': 'http://www.tbmm.gov.tr/develop/owa/milletvekillerimiz_sd.bilgi?p_donem=24&p_sicil=6843',
     # 'pos': '{}'.format('Kültür Ve Turizm Bakanı'.decode('utf-8'))
+    'pos': u'Milli Savunma Komisyonu \xdcyesi\xa0Akdeniz \xdd\xe7in Birlik Parlamenter Asamblesi T\xfcrk Grubu \xdcyesi'
 }
 
 
@@ -23,45 +24,73 @@ def get_all_persons_for_test(url):
     return get_entities(get_all_persons(url))
 
 
-class TurkeyTestSuite(unittest.TestCase):
-    pep_url = test_obj._main_url
-    all_persons = get_all_persons_for_test(pep_url)
+class TurkeyCreateTestCase(unittest.TestCase):
+    def setUp(self):
+        # self.persons = persons
+        self.persons = get_all_persons_for_test(MAIN_URL)
 
-    def testCheckHost(self):
-        self.assertEqual(self.pep_url, test_data['page_url'])
+    def tearDown(self):
+        self.persons = None
 
-    def testName(self):
-        all_names = [p['name'] for p in self.all_persons]
+
+class HostCheckTestCase(unittest.TestCase):
+    def setUp(self):
+        self.host = MAIN_URL
+
+    def tearDown(self):
+        self.host = None
+
+    def runTest(self):
+        self.assertEqual(self.host, test_data['page_url'])
+
+
+# @unittest.skip('SomeReason')
+class NameCheckTestCase(TurkeyCreateTestCase):
+    def runTest(self):
+        all_names = [p['name'] for p in self.persons]
         self.assertIn(test_data['person_name'], all_names)
 
-    def testParty(self):
-        all_parties = []
-        for x in self.all_persons:
-            all_parties.append(unit_test_helper(x, test_obj.POL_PRT))
-        self.assertIn(test_data['party'], set(all_parties))
 
-    def testPolReg(self):
-        regs = []
-        for x in self.all_persons:
-            regs.append(unit_test_helper(x, test_obj.POL_REG))
-        self.assertIn(test_data['reg'], set(regs))
-
-    def testPolPos(self):
-        positions = []
-        for x in self.all_persons:
-            positions.append(unit_test_helper(x, test_obj.POL_POS))
-        self.assertIn(test_data['pos'], set(positions))
-
-        # def runTest(self):
-        # print 'check host test'
-        #     self.testCheckHost()
+# @unittest.skip('SomeReason')
+class PartyCheckTestCase(TurkeyCreateTestCase):
+    def runTest(self):
+        collector = []
+        for person in self.persons:
+            collector.append(unit_test_helper(person, test_obj.POL_PRT))
+        self.assertIn(test_data['party'], set(collector))
 
 
-def suite():
+# @unittest.skip('SomeReason')
+class PoliticalRegionCheckTestCase(TurkeyCreateTestCase):
+    def runTest(self):
+        collector = []
+        for person in self.persons:
+            collector.append(unit_test_helper(person, test_obj.POL_REG))
+        self.assertIn(test_data['reg'], set(collector))
+
+
+# @unittest.skip('SomeReason')
+class PoliticalPositionCheckTestCase(TurkeyCreateTestCase):
+    def runTest(self):
+        collector = []
+        for person in self.persons:
+            collector.append(unit_test_helper(person, test_obj.POL_POS))
+        self.assertIn(test_data['pos'], set(collector))
+
+
+# @unittest.skip('SomeReason')
+class QuantityCheckTestCase(TurkeyCreateTestCase):
+    def runTest(self):
+        print len(self.persons)
+        self.assertGreaterEqual(len(self.persons), 10)
+
+
+def main():
     test_suite = unittest.TestSuite()
-    test_suite.addTest(unittest.makeSuite(TurkeyTestSuite))
     return test_suite
 
 
-runner = unittest.TextTestRunner()
-runner.run(suite())
+if __name__ == '__main__':
+    runner = unittest.TextTestRunner()
+    suite = main()
+    runner.run(suite)
