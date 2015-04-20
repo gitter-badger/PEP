@@ -40,7 +40,10 @@ def create_id(args):
     return sha224((sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
 
 
-def custom_opener(url, linux=True):
+def custom_opener(url):
+    import platform
+
+    _OS_LINUX = True if "linux" in platform.system().lower() or 'unix' in platform.system().lower() else False
     """
     While using WINDOWS use linux=False parameter, but before final contribute change in to linux=True
     :param url: input url
@@ -49,22 +52,20 @@ def custom_opener(url, linux=True):
     from bs4 import BeautifulSoup
     from helpers import fetch_string
 
-    if linux:
+    if _OS_LINUX:
         return BeautifulSoup(fetch_string(url, cache_hours=6))
     else:
         from urllib2 import urlopen
 
         try:
-            return BeautifulSoup(urlopen(url).read())
+            return BeautifulSoup(urlopen(url, timeout=50).read())
         except Exception, e:
             print e
             pass
 
-import helpers
-
 
 _host = 'http://www.tbmm.gov.tr'
-_main_url = '{host}/develop/owa/milletvekillerimiz_sd.liste'.format(host=_host)
+MAIN_URL = '{host}/develop/owa/milletvekillerimiz_sd.liste'.format(host=_host)
 
 POL_POS = 'political_position'
 POL_REG = 'political_region'
@@ -76,7 +77,7 @@ PERSON_URL = 'url'
 
 def get_all_persons(url):
     persons = []
-    main_page = custom_opener(url, linux=True)
+    main_page = custom_opener(url)
 
     for row in main_page.find('table').find_all('tr'):
         person_row = row.find('a')
@@ -86,7 +87,7 @@ def get_all_persons(url):
             person_name = person_obj.text
             person_prt = party.text
             person_url = person_obj.find('a').get('href')
-            sub_page = custom_opener(person_url, linux=True)
+            sub_page = custom_opener(person_url)
             person_pic = sub_page.find('div', {'id': 'fotograf_alani'}).find('img').get('src')
             pol_reg = sub_page.find('div', {'id': 'mv_ili'}).text.strip(' Milletvekili').upper()
             pol_pos = sub_page.find('div', {'id': 'mv_gorev'}).text
@@ -105,7 +106,7 @@ def get_all_persons(url):
 def get_entities(persons):
     entities = []
     for person in persons:
-        name = person[PER_NAME]
+        name = person.pop(PER_NAME)
         values = person.values()
         unique_id = create_id([_.encode('utf-8') for _ in values])
 
@@ -114,12 +115,12 @@ def get_entities(persons):
         ]
 
         entities.append(create_entity(unique_id, 'person', name, fields))
-
     return entities
 
 
 def main():
-    main_obj = get_all_persons(_main_url)
+    main_obj = get_all_persons(MAIN_URL)
+    import helpers
 
     for entity in get_entities(main_obj):
         # helpers.check(entity)

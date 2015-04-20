@@ -57,7 +57,7 @@ def custom_opener(url):
         from urllib2 import urlopen
 
         try:
-            return BeautifulSoup(urlopen(url, timeout=50).read())
+            return BeautifulSoup(urlopen(url, timeout=20).read())
         except Exception, e:
             print e
             pass

@@ -45,7 +45,7 @@ def get_all_persons(url):
 def get_entities(persons):
     entities = []
     for person in persons:
-        name = person[PER_NAME]
+        name = person.pop(PER_NAME)
         values = person.values()
         unique_id = create_id([_.encode('utf-8') for _ in values])
 
@@ -61,8 +61,8 @@ def main():
     main_obj = get_all_persons(MAIN_URL)
 
     for entity in get_entities(main_obj):
-        # helpers.check(entity)
-        helpers.emit(entity)
+        helpers.check(entity)
+        # helpers.emit(entity)
 
 
 # main scraper
