@@ -1,7 +1,9 @@
 # coding=utf-8
 from collections import namedtuple
 import unittest
+
 from dev_scrapers import turkey as test_obj
+
 
 test_data = {
     'page_url': 'http://www.tbmm.gov.tr/develop/owa/milletvekillerimiz_sd.liste',
@@ -13,9 +15,8 @@ test_data = {
 }
 
 
-def unit_test_helper(person):
-    return next(_['value'] for _ in person['fields'] if _['tag'] == test_obj.x)
-
+def unit_test_helper(person, x):
+    return next(_['value'] for _ in person['fields'] if _['tag'] == x)
 
 
 class TestSuite(unittest.TestCase):
@@ -36,11 +37,10 @@ class TestSuite(unittest.TestCase):
 
     def testParty(self):
         parties = []
-        # for x in self.setUp().persons:
-        #     party = next(_['value'] for _ in x['fields'] if _['tag'] == test_obj.POL_PRT)
-        #     parties.append(party)
-        unit_test_helper()
-
+        for x in self.setUp().persons:
+            parties.append(unit_test_helper(x, test_obj.POL_PRT))
+            # party = next(_['value'] for _ in x['fields'] if _['tag'] == test_obj.POL_PRT)
+            # parties.append(party)
         self.assertIn(test_data['party'], set(parties))
 
     def testPolReg(self):

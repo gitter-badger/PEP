@@ -14,24 +14,10 @@ PER_NAME = 'person_name'
 PIC_URL = 'picture_url'
 PERSON_URL = 'url'
 
-TEST_DATA = '''
-Rule Name	Rule Value
-Scrape minimum number of entities	40
-Contains given name or AKA entry, special field "name: person_name" field	Ulziisaikhan ENKHTUVSHIN
-Contains a field with "tag": "url", where the value is the url of the page containing person data	http://www.parliament.mn/en/who?type=3&cid=78
-Contains a field "tag": "picture_ul", with the value being the url of a picture on page	http://www.parliament.mn/en/files/images/824-7864481.jpg
-Contains a field "tag": "political_position", where value is given political position	Member of the State Great Hural (Parliament) of Mongolia
-Contains given name or AKA entry, special field "name: person_name" field	Zandaakhuu ENKHBOLD
-Contains a field "tag": "political_position", where value is given political position	Chairman of the State Great Hural (Parliament) of Mongolia
-Contains a field "tag": "picture_ul", with the value being the url of a picture on page	http://www.parliament.mn/en/files/images/658-7864481.jpg
-Scrape minimum number of entities	30
-Contains a field "tag": "political_position", where value is given political position	Vice Chairman of the State Great Hural (Parliament) of Mongolia
-'''
-
 
 def get_all_persons(url):
     persons = []
-    main_page = custom_opener(url, linux=True)
+    main_page = custom_opener(url)
 
     for row in main_page.find('div', {'class': 'span9'}).find_all('div', {'class': 'row'}):
         frames = row.find_all('a')

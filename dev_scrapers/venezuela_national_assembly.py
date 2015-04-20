@@ -1,13 +1,10 @@
 # coding=utf-8
-import platform
-
 from utils import custom_opener, create_entity, create_id
 import helpers
 
 
 _BASE_URL = "http://www.asambleanacional.gob.ve/diputado/ajaxcargardiputados/tipodiputado/{type}"
 _DOMAIN = "http://www.asambleanacional.gob.ve"
-_OS_LINUX = True if "linux" in platform.system().lower() else False
 
 
 def get_all_persons():
@@ -29,7 +26,7 @@ def scrape_type(url_temp):
 
 
 def scrape_page(url):
-    _page = custom_opener(url, linux=_OS_LINUX)
+    _page = custom_opener(url)
     persons = []
     for person in _page.find_all('td', {'class': 'link'}):
         name = person.find('a', {'id': 'linkdiputado'})

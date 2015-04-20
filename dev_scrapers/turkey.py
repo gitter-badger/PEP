@@ -16,7 +16,7 @@ PERSON_URL = 'url'
 
 def get_all_persons(url):
     persons = []
-    main_page = custom_opener(url, linux=0)
+    main_page = custom_opener(url)
 
     for row in main_page.find('table').find_all('tr'):
         person_row = row.find('a')
@@ -26,18 +26,17 @@ def get_all_persons(url):
             person_name = person_obj.text
             person_prt = party.text
             person_url = person_obj.find('a').get('href')
-
-            # sub_page = custom_opener(person_url, linux=0)
-            # person_pic = sub_page.find('div', {'id': 'fotograf_alani'}).find('img').get('src')
-            # pol_reg = sub_page.find('div', {'id': 'mv_ili'}).text.strip(' Milletvekili').upper()
-            # pol_pos = sub_page.find('div', {'id': 'mv_gorev'}).text
+            sub_page = custom_opener(person_url)
+            person_pic = sub_page.find('div', {'id': 'fotograf_alani'}).find('img').get('src')
+            pol_reg = sub_page.find('div', {'id': 'mv_ili'}).text.strip(' Milletvekili').upper()
+            pol_pos = sub_page.find('div', {'id': 'mv_gorev'}).text
             obj = {
                 PER_NAME: person_name,
                 PERSON_URL: person_url,
-                # PIC_URL: person_pic,
+                PIC_URL: person_pic,
                 POL_PRT: person_prt,
-                # POL_REG: pol_reg,
-                # POL_POS: pol_pos
+                POL_REG: pol_reg,
+                POL_POS: pol_pos
             }
             persons.append(obj)
     return persons
@@ -63,8 +62,8 @@ def main():
     main_obj = get_all_persons(_main_url)
 
     for entity in get_entities(main_obj):
-        helpers.check(entity)
-        # helpers.emit(entity)
+        # helpers.check(entity)
+        helpers.emit(entity)
 
 
 # main scraper

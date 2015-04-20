@@ -39,7 +39,10 @@ def create_id(args):
     return sha224((sub("[^a-zA-Z0-9]", "", conc_names))).hexdigest()
 
 
-def custom_opener(url, linux=True):
+def custom_opener(url):
+    import platform
+
+    _OS_LINUX = True if "linux" in platform.system().lower() or 'unix' in platform.system().lower() else False
     """
     While using WINDOWS use linux=False parameter, but before final contribute change in to linux=True
     :param url: input url
@@ -48,7 +51,7 @@ def custom_opener(url, linux=True):
     from bs4 import BeautifulSoup
     from helpers import fetch_string
 
-    if linux:
+    if _OS_LINUX:
         return BeautifulSoup(fetch_string(url, cache_hours=6))
     else:
         from urllib2 import urlopen
