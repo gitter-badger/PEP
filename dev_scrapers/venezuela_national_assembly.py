@@ -1,7 +1,8 @@
 # coding=utf-8
+import platform
+
 from utils import custom_opener, create_entity, create_id
 import helpers
-import platform
 
 
 _BASE_URL = "http://www.asambleanacional.gob.ve/diputado/ajaxcargardiputados/tipodiputado/{type}"
@@ -9,28 +10,14 @@ _DOMAIN = "http://www.asambleanacional.gob.ve"
 _OS_LINUX = True if "linux" in platform.system().lower() else False
 
 
-# TEST_DATA = '''
-# Rule Name	Rule Value
-# Scrape minimum number of entities	40
-# Contains given name or AKA entry, special field "name: person_name" field	Ulziisaikhan ENKHTUVSHIN
-# Contains a field with "tag": "url", where the value is the url of the page containing person data	http://www.parliament.mn/en/who?type=3&cid=78
-# Contains a field "tag": "picture_ul", with the value being the url of a picture on page	http://www.parliament.mn/en/files/images/824-7864481.jpg
-# Contains a field "tag": "political_position", where value is given political position	Member of the State Great Hural (Parliament) of Mongolia
-# Contains given name or AKA entry, special field "name: person_name" field	Zandaakhuu ENKHBOLD
-# Contains a field "tag": "political_position", where value is given political position	Chairman of the State Great Hural (Parliament) of Mongolia
-# Contains a field "tag": "picture_ul", with the value being the url of a picture on page	http://www.parliament.mn/en/files/images/658-7864481.jpg
-# Scrape minimum number of entities	30
-# Contains a field "tag": "political_position", where value is given political position	Vice Chairman of the State Great Hural (Parliament) of Mongolia
-# '''
-
-
 def get_all_persons():
     persons = []
-    for type in range(1,3):
-        url = _BASE_URL.format(type=type)
+    for person_type in range(1, 3):
+        url = _BASE_URL.format(type=person_type)
         persons += scrape_type(url)
 
     return persons
+
 
 def scrape_type(url_temp):
     result = []
@@ -39,6 +26,7 @@ def scrape_type(url_temp):
         result += scrape_page(page_number_temp.format(page=page))
 
     return result
+
 
 def scrape_page(url):
     _page = custom_opener(url, linux=_OS_LINUX)
@@ -63,11 +51,13 @@ def scrape_page(url):
 
     return persons
 
+
 def get_url(string):
     if not string.startswith(_DOMAIN):
-        string = _DOMAIN + string
+        string += _DOMAIN
 
     return string
+
 
 def get_entities(persons):
     entities = []
@@ -90,6 +80,7 @@ def main():
 
     for entity in get_entities(main_obj):
         helpers.emit(entity)
+        # helpers.check(entity)
 
 # main scraper
 if __name__ == "__main__":
