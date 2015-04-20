@@ -8,7 +8,7 @@ import helpers
 _BASE_URL = "http://www.asambleanacional.gob.ve/diputado/ajaxcargardiputados/tipodiputado/{type}"
 _DOMAIN = "http://www.asambleanacional.gob.ve"
 _PARTIES = {}
-WHITESPACE_PATTERN = re.compile('[\t\r\n\v]| {2,}| $|^ ')
+WHITESPACE_PATTERN = re.compile('[\t\r\n\v]| {2,}| *$|^ *')
 
 
 def get_all_persons():
@@ -86,7 +86,7 @@ def get_entities(persons):
         unique_id = create_id([_.encode('utf-8') for _ in values])
 
         fields = [
-            {'tag': t, 'value': v} for t, v in person.items()
+            {'tag': t, 'value': WHITESPACE_PATTERN.sub('', v)} for t, v in person.items()
         ]
 
         entities.append(create_entity(unique_id, 'person', name, fields))
