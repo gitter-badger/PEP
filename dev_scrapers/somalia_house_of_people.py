@@ -4,16 +4,24 @@ import helpers
 import re
 
 
-_BASE_URL = "http://www.parliament.gov.so/index.php/en/membersparliament-3?start={index}"
+_BASE_URL_ENG = "http://www.parliament.gov.so/index.php/en/membersparliament-3?start={index}"
+_BASE_URL_SOM = 'http://www.parliament.gov.so/index.php/so/xubnaha-2?start={index}'
 _DOMAIN = "http://www.parliament.gov.so"
 WHITESPACE_PATTERN = re.compile('[\t\r\n\v]| {2,}| $|^ ')
+_MONTHS = {
+    'march': '03',
+    'august': '08',
+    'aug': '08'
+}
 
 
-def get_all_persons():
+def get_all_persons(arg):
     persons = []
-    for index in range(0, 22):
-        url = _BASE_URL.format(index=str(index*10))
-        persons += scrape_page(url)
+    for index in range(0, 28):
+        eng_url = _BASE_URL_ENG.format(index=str(index*10))
+        persons += scrape_page(eng_url)
+        som_url = _BASE_URL_SOM.format(index=str(index*10))
+        persons += scrape_page(som_url)
 
     return persons
 
@@ -54,9 +62,58 @@ def scrape_person_page(url):
     }
     picture_url = get_picture(_page)
     if picture_url:
-        obj['picture_url'] = picture_url
+        obj['picture_url'] = picture_url.replace(' ', '%20')
+
+    date_of_election = get_date_election('p', _page, url)
+    if date_of_election:
+        obj["active_start_date"] = date_of_election
+    else:
+        date_of_election = get_date_election('div', _page, url)
+        if date_of_election:
+            obj["active_start_date"] = date_of_election
 
     return obj
+
+def get_date_election(tag, page, url):
+    html = page.prettify()
+    date = re.search('(.+[Aa]ugust.+|.+[Mm]arch.+|.+[Aa]ug.+)', html)
+    if date:
+        content = date.group(1).lower()
+        date = None
+
+        for name in ['electionm', 'election', 'nomination']:
+            if name in content:
+                text = content.split(name)
+                if text[-1]:
+                    date = WHITESPACE_PATTERN.sub('', text[-1].replace(':', ''))
+
+        if not date:
+            date = WHITESPACE_PATTERN.sub('', content.replace(':', ''))
+
+        date = date.split()
+        if len(date) > 3:
+            if date[0] == 'm':
+                date.pop(0)
+
+        month = None
+        year = None
+        day = None
+        good_type = len(date) == 3
+        for number in date:
+            if number in _MONTHS:
+                month = _MONTHS[number]
+
+            elif not good_type:
+                day, year = number.split(',')
+            elif len(number) == 4:
+                year = number
+            else:
+                day = number
+
+        if month or year or day:
+            return "{0}-{1}-{2}".format(year, month, day)
+
+    return None
 
 def get_url(string):
     if not string.startswith(_DOMAIN):
@@ -82,7 +139,7 @@ def get_entities(persons):
 
 
 def main():
-    main_obj = get_all_persons()
+    main_obj = get_all_persons(_DOMAIN)
 
     for entity in get_entities(main_obj):
         # helpers.emit(entity)
