@@ -11,7 +11,7 @@ _PARTIES = {}
 WHITESPACE_PATTERN = re.compile('[\t\r\n\v]| {2,}| *$|^ *')
 
 
-def get_all_persons():
+def get_all_persons(url):
     persons = []
     for person_type in range(1, 3):
         url = _BASE_URL.format(type=person_type)
