@@ -76,7 +76,7 @@ _PARTIES = {}
 WHITESPACE_PATTERN = re.compile('[\t\r\n\v]| {2,}| $|^ ')
 
 
-def get_all_persons():
+def get_all_persons(_DOMAIN):
     persons = []
     for person_type in range(1, 3):
         url = _BASE_URL.format(type=person_type)
@@ -138,7 +138,7 @@ def get_party_name(party, url):
 
 def get_url(string):
     if not string.startswith(_DOMAIN):
-        string = _DOMAIN + string
+        string += _DOMAIN
 
     return string
 
@@ -160,7 +160,7 @@ def get_entities(persons):
 
 
 def main():
-    main_obj = get_all_persons()
+    main_obj = get_all_persons(_DOMAIN)
 
     for entity in get_entities(main_obj):
         helpers.emit(entity)
