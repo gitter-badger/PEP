@@ -95,7 +95,7 @@ def get_entities(persons):
 
 
 def main():
-    main_obj = get_all_persons()
+    main_obj = get_all_persons(_DOMAIN)
 
     for entity in get_entities(main_obj):
         helpers.emit(entity)
