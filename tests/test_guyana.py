@@ -15,7 +15,7 @@ test_data = {
     'political_party1': 'Alliance for Change - AFC',
     'political_position': 'Minister of Home Affairs',
     'political_position1': 'Speaker of the House',
-    'profile': u'A young Attorney at Law James Bond is a first time member of the National Assembly with opposition responsibility for Legal Affairs which includes constitution reform; public law; justice improvement; criminal justice system; legal\xa0 aid and\xa0 labour relations',
+    'profile': 'A young Attorney at Law James Bond is a first time member of the National Assembly with opposition responsibility for Legal Affairs which includes constitution reform; public law; justice improvement; criminal justice system; legal aid and labour relations',
     'profile1': 'A Microbiologist, DrRamsammy has served in the National Assembly since 1992. The former Senior Min. of Health, Dr. Ramsammy now holds the Portfolio of Minister of Agriculture with the responsibility for Fisheries, Livestock, Other Crops, Agro-energy, Drainage and Irrigation and Forestry.',
 }
 

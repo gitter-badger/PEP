@@ -61,7 +61,7 @@ def scrape_page(url):
                 content += paragraph.text
 
             if content:
-                obj['profile'] = content
+                obj['profile'] = content.replace(u'\u00a0', '')
 
         persons.append(obj)
 
