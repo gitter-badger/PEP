@@ -9,6 +9,8 @@ _BASE_URL = "http://parliament.gov.gy/about-parliament/parliamentarian/P{page}" 
 _DOMAIN = "http://parliament.gov.gy"
 WHITESPACE_PATTERN = re.compile('[\t\r\n\v]| {2,}| *$|^ *')
 
+_EXTRA_PARTS = ['Hon.', 'Dr.', ',MP']
+
 
 def get_all_persons(url):
     persons = []
@@ -36,7 +38,10 @@ def scrape_page(url):
             if label:
                 if 'name' in label.text.lower():
                     label.extract()
-                    obj['person_name'] = WHITESPACE_PATTERN.sub('', attr.text)
+                    name = WHITESPACE_PATTERN.sub('', attr.text)
+                    for part in _EXTRA_PARTS:
+                        name = name.replace(part, '')
+                    obj['person_name'] = WHITESPACE_PATTERN.sub('', name)
                 elif 'designation' in label.text.lower():
                     label.extract()
                     obj['political_position'] = WHITESPACE_PATTERN.sub('', attr.text)
@@ -89,8 +94,8 @@ def main():
     main_obj = get_all_persons(_DOMAIN)
 
     for entity in get_entities(main_obj):
-        # helpers.emit(entity)
-        helpers.check(entity)
+        helpers.emit(entity)
+        # helpers.check(entity)
 
 # main scraper
 if __name__ == "__main__":
