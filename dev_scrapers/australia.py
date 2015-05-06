@@ -7,10 +7,6 @@ from dateutil import parser
 from utils import create_entity, create_id, custom_opener
 import helpers
 
-_MONTHS = {
-    u' \u062d\u0632\u064a\u0631\u0627\u0646': '06'
-}
-
 _host = 'http://www.apra.gov.au'
 
 URLS = [
