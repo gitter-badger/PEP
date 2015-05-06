@@ -1,11 +1,12 @@
 # coding=utf-8
-from pprint import pprint
-from bs4 import BeautifulSoup
 import re
+
+from bs4 import BeautifulSoup
 from dateutil import parser
 
 from utils import create_entity, create_id, custom_opener
 import helpers
+
 
 _host = 'http://www.apra.gov.au'
 
