@@ -1,5 +1,7 @@
 # PEP
 
+[![Join the chat at https://gitter.im/redbonesmith/PEP](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/redbonesmith/PEP?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Scraper Overview
 A scraper is a python script using Python versions 2.7 or 3.4, which is your choice!
 You can assume that the following libraries are available from the pip --freeze command:
